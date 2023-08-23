@@ -1,0 +1,118 @@
+@use "variables";
+
+.prevent-select {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.center {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-around {
+  justify-content: space-around;
+}
+.align-center {
+  align-items: center;
+}
+
+.rounded {
+  border-radius: 5px;
+}
+
+.text-overflow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cur-p {
+  cursor: pointer;
+}
+
+.ml-a {
+  margin-left: auto;
+}
+
+.btn {
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.btn--primary {
+  background-color: variables.$primary;
+  box-shadow: 1px 5px 10px rgba(variables.$primary, 0.4);
+  transition: transform 0.1s linear;
+
+  &:hover {
+    color: white !important;
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+}
+.btn--highlight {
+  background: linear-gradient(to right, variables.$pink, variables.$purple);
+  box-shadow: 0px 4px 17px rgba(variables.$pink, 0.7);
+  transition: transform 0.1s linear;
+
+  &:hover {
+    color: white !important;
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+}
+.btn--secondary {
+  padding: 0.2rem 0.5rem;
+  background-color: variables.$secondary;
+  border: 1px solid rgba(variables.$gray-dark, 0.6);
+
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: rgba(variables.$gray-dark, 0.6);
+
+  &:hover {
+    border: 1px solid rgba(variables.$primary, 0.7);
+    color: rgba(variables.$primary, 0.7) !important;
+  }
+  &-active {
+    border: 1.5px solid variables.$primary;
+    background-color: variables.$primary;
+    color: variables.$secondary;
+
+    &:hover {
+      border: 1px solid rgba(variables.$primary, 0.7);
+      color: rgba(variables.$secondary, 1) !important;
+    }
+  }
+}

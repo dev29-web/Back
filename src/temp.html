@@ -1,0 +1,90 @@
+<section
+              className="content"
+              style={{
+                flex: sidebar.show
+                  ? `${100 - sidebar.width}%`
+                  : sidebar.show2
+                  ? `${100 - sidebar.width2}%`
+                  : "100%",
+              }}
+            >
+              {/* All pages here */}
+
+              {/* <AllEvent handle_sideBar={handle_sideBar} /> */}
+              {/* <Lists logoName={logoName} handle_sideBar={handle_sideBar} /> */}
+
+              {/* Start */}
+
+              {/* Filter section */}
+              <div className="flex-row filters-box">
+                {/* Title */}
+                <h2 onClick={() => handle_sideBar2(true)}>Your Vents</h2>
+                {/* Filter Buttons */}
+                <button className="ml-a btn btn--secondary btn--secondary">
+                  By date
+                </button>
+                <button className="btn btn--secondary btn--secondary">
+                  By date
+                </button>
+                <button className="btn btn--secondary btn--secondary-active">
+                  By date
+                </button>
+
+                {/* Create Button */}
+                <button className="btn btn--highlight btn--create">
+                  Create new vent <GoPlus />
+                </button>
+              </div>
+
+              <div className="events events-box">
+                <OwnCard
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+                <OwnCard
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+                <OwnCard
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+                <OwnCard
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+                <OwnCard
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+                <OwnCard
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+                <OwnCard
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+              </div>
+              <h2 onClick={() => handle_sideBar2(true)}>Joined Vents</h2>
+              <div className="events events-box">
+                <Card
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+                <Card
+                  handle_sideBar={handle_sideBar}
+                  handle_sideBar2={handle_sideBar2}
+                  logoName={logoName}
+                />
+              </div>
+              {/* End */}
+            </section>
