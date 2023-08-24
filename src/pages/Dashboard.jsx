@@ -6,7 +6,13 @@ import Card from "./../components/home/Card";
 import { useVent } from "../Context";
 
 export default function Dashboard({}) {
-  const { handleSidebar, handleSidebar2, SavedVents, handleModal } = useVent();
+  const {
+    handleSidebar,
+    handleSidebar2,
+    SavedVents,
+    handleModal,
+    currentAccount,
+  } = useVent();
 
   console.log("Dashboard", SavedVents);
   return (
@@ -27,7 +33,7 @@ export default function Dashboard({}) {
         {/* Create Button */}
         <button
           className="btn btn--highlight btn--create"
-          onClick={() => handleModal(true, "Add")}
+          onClick={() => currentAccount && handleModal(true, "Add")}
         >
           Create new vent <GoPlus />
         </button>

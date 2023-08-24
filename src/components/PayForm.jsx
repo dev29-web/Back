@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import Draggable from "react-draggable";
-import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
 import {
   Button,
   Select,
@@ -16,7 +15,7 @@ import {
 import { useVent } from "../Context.jsx";
 
 const balance = "10";
-const App = ({}) => {
+const PayForm = React.memo(({}) => {
   const [disabled, setDisabled] = useState(true);
   const [bounds, setBounds] = useState({
     left: 0,
@@ -50,7 +49,7 @@ const App = ({}) => {
     coin,
     address_shorten,
     handlePayForm,
-    handleModal,
+    handleModal2,
     modal,
   } = useVent();
 
@@ -131,7 +130,7 @@ const App = ({}) => {
     console.log("first");
     setAmount(0);
 
-    handleModal(false);
+    handleModal2(false);
   };
 
   function usdcOption() {
@@ -455,5 +454,5 @@ const App = ({}) => {
       </Modal>
     </>
   );
-};
-export default App;
+});
+export default PayForm;

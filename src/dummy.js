@@ -18,7 +18,7 @@ export const vents = [
   {
     uid: "dummy1",
     name: "Dummy Vent 3",
-    owner: "0x2Ef7736AFeb464E68ecbB1258E2668e276CBBEc8",
+    owner: "0xF747F92b123Aca5Af635d1073796129318E4791C",
     chainName: "Ethereum",
     balance: "521000000000000000",
     expense: "209112000000000000",

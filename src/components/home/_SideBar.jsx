@@ -5,11 +5,91 @@ import SpendCard from "../dashboard/SpendCard";
 import BarLoader from "react-spinners/BarLoader";
 
 import { useVent } from "../../Context";
+import NotConnected from "../NotConnected";
+
+import VentDB from "../../api";
+import { ethers } from "ethers";
+const { formatEther, isAddress } = ethers.utils;
+
+import { DeleteFilled } from "@ant-design/icons";
+import { GoPencil } from "react-icons/go";
+
+const change = true;
+async function _getVent(
+  Contract,
+  id,
+  chainName,
+  setVent,
+  setStatus,
+  sameChain
+) {
+  if (Contract && sameChain) {
+    try {
+      const vent = await Contract.Events(id);
+
+      console.log("vent contract get success", vent);
+      //Set loading to false and set vent
+      setStatus({ loading: false, error: false, message: "" });
+      setVent(vent);
+      //
+    } catch (err) {
+      setStatus({
+        loading: false,
+        error: true,
+        message: (
+          <>
+            <NotConnected />
+          </>
+        ),
+      });
+      console.log("vent get error", err);
+    }
+  } else {
+    try {
+      const { data } = await VentDB.get(`/${chainName}/${id}`);
+
+      if (data && data.vent) {
+        //Set loading to false and set vent
+        setStatus({ loading: false, error: false, message: "" });
+        const { vent } = data;
+        console.log("vent mongo get success", vent);
+        setVent(vent);
+      } else {
+        setStatus({
+          loading: false,
+          error: true,
+          message: (
+            <>
+              <h6 style={{ fontWeight: 400 }}>
+                Sorry Contract no longer exist
+              </h6>
+            </>
+          ),
+        });
+      }
+    } catch (err) {
+      setStatus({
+        loading: false,
+        error: true,
+        message: (
+          <>
+            <h6 style={{ fontWeight: 400 }}>Switch network in metamask</h6>
+            <h5 style={{ textTransform: "capitalize", fontWeight: 400 }}>
+              to {chainName}
+            </h5>
+          </>
+        ),
+      });
+      console.log("vent get error", err);
+    }
+  }
+}
 
 // Sidebar UserDetail
 // -----Page
 export function SideBarForUser() {
-  const { sidebar, Contract, handleModal2, setConnectModal } = useVent();
+  const { sidebar, Contract, handleModal2, isSameAddress, currentAccount } =
+    useVent();
 
   const [vent, setVent] = useState(undefined);
   const [status, setStatus] = useState({
@@ -21,46 +101,26 @@ export function SideBarForUser() {
   useEffect(() => {
     if (!sidebar || sidebar.show === false || sidebar.showId === "") return;
 
-    async function _getVent(id) {
-      if (Contract) {
-        const vent = await Contract.Events(id).catch((err) => {
-          setStatus({ loading: false, error: true, message: err.message });
-          console.log("vent get error", err);
-        });
-
-        console.log("vent get success", vent);
-        //Set loading to false and set vent
-        setStatus({ loading: false, error: false, message: "" });
-        setVent(vent);
-      } else {
-        setStatus({
-          loading: false,
-          error: true,
-          message: (
-            <>
-              <h4>Contract not found</h4>
-              <h6 style={{ fontWeight: "300", marginBottom: "-5px" }}>
-                Connect to Metamask Wallet
-              </h6>
-              <button
-                className="btn btn--primary"
-                onClick={() => setConnectModal(true)}
-              >
-                Connect
-              </button>
-            </>
-          ),
-        });
-      }
-    }
-
     setStatus({ loading: true, error: false, message: "" });
     // Vent get
-    _getVent(sidebar.showId);
+    _getVent(
+      Contract,
+      sidebar.showId,
+      sidebar.chainName,
+      setVent,
+      setStatus,
+      change
+      // isSameNetwork(sidebar?.chainName)
+    );
   }, [sidebar]);
 
   return (
     <>
+      {status.error && (
+        <div className="center">
+          <h4>{status.message}</h4>
+        </div>
+      )}
       {
         //Loading
         status.loading ? (
@@ -69,6 +129,7 @@ export function SideBarForUser() {
           </div>
         ) : (
           vent &&
+          !status.error &&
           Object.keys(vent).length > 0 && (
             <>
               <Card id={1} handle_sideBar={() => {}} vent={vent} />
@@ -78,7 +139,7 @@ export function SideBarForUser() {
               </h2>
 
               {/* Amount */}
-              <_Amount balance={vent?.balance} expense={vent?.expense} />
+              <_Amount balance={vent?.balance} expense={vent?.expense || "0"} />
 
               {/* Details */}
               <_Details
@@ -94,15 +155,20 @@ export function SideBarForUser() {
               >
                 Pay {">>"}{" "}
               </button>
+
+              {isSameAddress(vent?.owner, currentAccount) && (
+                <button
+                  onClick={() => {}}
+                  style={{ fontSize: "1rem" }}
+                  className="btn btn--secondary"
+                >
+                  Switch Network to edit
+                </button>
+              )}
             </>
           )
         )
       }
-      {status.error && (
-        <div className="center">
-          <h4>{status.message}</h4>
-        </div>
-      )}
       {/* {console.log("sbar", Object.keys(vent))} */}
     </>
   );
@@ -171,9 +237,10 @@ const _Amount = React.memo(({ balance, expense }) => {
 // Sidebar Full EventDetail for Owner
 // -----Page
 export function SideBarForOwner() {
-  const { sidebar, getVent, amount, handleModal, handleModal2 } = useVent();
+  const { sidebar, Contract, handleModal2, coin } = useVent();
 
   const [vent, setVent] = useState(undefined);
+  const [teams, setTeams] = useState([]);
   const [status, setStatus] = useState({
     loading: false,
     error: false,
@@ -183,21 +250,29 @@ export function SideBarForOwner() {
   useEffect(() => {
     if (!sidebar || sidebar.show === false || sidebar.showId === "") return;
 
-    async function _getVent(id) {
-      const vent = await getVent(id).catch((err) => {
-        setStatus({ loading: false, error: true, message: err.message });
-        console.log("vent get error", err);
-      });
-
-      console.log("vent get success", vent);
-      //Set loading to false and set vent
-      setStatus({ loading: false, error: false, message: "" });
-      setVent(vent);
-    }
-
     setStatus({ loading: true, error: false, message: "" });
     // Vent get
-    _getVent(sidebar.showId);
+    _getVent(
+      Contract,
+      sidebar.showId,
+      sidebar.chainName,
+      setVent,
+      setStatus,
+      change
+    );
+
+    async function _getTeams(id) {
+      try {
+        if (!id) return;
+        const _teams = await Contract?.getStaffs(3);
+        console.log("getTeams success", _teams[0]);
+        setTeams(_teams[0]);
+      } catch (err) {
+        console.log("getTeams error", err);
+      }
+    }
+    // Teams get
+    _getTeams(sidebar?.showId);
   }, [sidebar]);
 
   return (
@@ -223,7 +298,7 @@ export function SideBarForOwner() {
               </h2>
 
               {/* Amount */}
-              <_Amount balance={vent?.balance} expense={vent?.expense} />
+              <_Amount balance={vent?.balance} expense={vent?.expense || 0} />
 
               {/* Details */}
               <_Details
@@ -243,13 +318,26 @@ export function SideBarForOwner() {
               <h4>
                 Team
                 <p>
-                  Coin: <span>Avax</span>
+                  Coin: <span>{coin(vent?.chainName).coin}</span>
                 </p>
               </h4>
               <div className="teams">
-                <Team name={"name"} amount={amount} address={"address"} />
-                <Team name={"name"} amount={amount} address={"address"} />
-                <Team name={"name"} amount={amount} address={"address"} />
+                {teams && teams.length > 0 ? (
+                  teams?.map((team) => {
+                    return (
+                      <Team
+                        name={team?.name}
+                        limit={team.limit}
+                        expense={team?.expense}
+                        address={team?.staff}
+                        // open={open}
+                        // setOpen={setOpen}
+                      />
+                    );
+                  })
+                ) : (
+                  <p className="center">No members yet</p>
+                )}
               </div>
               <div className="flex-row justify-around">
                 <button
@@ -273,18 +361,34 @@ export function SideBarForOwner() {
   );
 }
 //------Components
-function Team({ name, amount, address }) {
+function Team({ name, limit, expense, address }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="team">
-      <h5 className="text-overflow">{name}</h5>
-      <p>
-        {address.toString().slice(0, 7)}
-        .....
-        {address.toString().slice(-5)}
-      </p>
-      <h6>{parseFloat(amount).toFixed(1)}</h6>
-      <h6>{parseFloat(amount).toFixed(1)}</h6>
-    </div>
+    name &&
+    expense &&
+    address && (
+      <>
+        <EditTeamModal
+          open={open}
+          setOpen={setOpen}
+          name={name}
+          address={address}
+          limit={limit}
+          expense={expense}
+        />
+        <div className="team">
+          <h5 className="text-overflow">{name}</h5>
+          <p>
+            {address.toString().slice(0, 7)}
+            .....
+            {address.toString().slice(-5)}
+          </p>
+          <h6>{parseFloat(formatEther(limit)).toFixed(1)}</h6>
+          <h6>{parseFloat(formatEther(expense)).toFixed(1)}</h6>
+          <GoPencil className="cur-p" onClick={() => setOpen(true)} />
+        </div>
+      </>
+    )
   );
 }
 
@@ -317,6 +421,134 @@ export function SideBarForSpend({ name }) {
           type={"avax"}
         />
       </section>
+    </>
+  );
+}
+
+import { Modal, Form, Input, InputNumber, message } from "antd";
+
+export function EditTeamModal({ open, setOpen, ...form }) {
+  const [Team, setTeam] = useState({
+    staff: "",
+    name: "",
+    limit: "",
+  });
+
+  const handleTeamForm = (name, value) => {
+    console.log("team", name, value);
+    setTeam({ ...Team, [name]: value });
+  };
+
+  useEffect(() => {
+    console.log(form);
+    if (open) {
+      setTeam({
+        staff: form.address,
+        name: form.name,
+        limit: formatEther(form.limit),
+      });
+    }
+  }, [open]);
+
+  const handleOk = () => {
+    if (Team.limit < 0 || Team.limit < formatEther(form.expense))
+      return message.warning("Limit should be greater than expense");
+
+    // setOpen(false);
+    if (!Team.name || Team.name.length === 0)
+      return message.warning("Need a name");
+
+    Contract.editStaff(
+      form.eventId,
+      form.staffId,
+      Team.name,
+      parseWeiToEther(Team.limit)
+    );
+
+    VentDB.put(`/${form.chainName}/${form.id}`, {
+      ...form,
+      staff: Team.staff,
+      name: Team.name,
+      limit: parseWeiToEther(Team.limit),
+    })
+      .then((res) => {
+        console.log("edit team mongo success", res);
+        message.success("Team edited successfully");
+        setOpen(false);
+      })
+      .catch((err) => {
+        console.log("edit team mongo error", err);
+        message.error("Team edit failed");
+      });
+  };
+  return (
+    <>
+      <Modal
+        title={<h4>Edit Team</h4>}
+        open={open}
+        // footer={}
+        onOk={handleOk}
+        okText={"Edit"}
+        onCancel={() => setOpen(false)}
+        width={500}
+      >
+        <div
+          className="flex-row justify-around align-center"
+          style={{ height: "100%", gap: "1rem" }}
+        >
+          <>
+            <Form.Item
+              style={{
+                display: "inline-block",
+                width: "calc(40% - 15px)",
+                marginRight: "10px",
+                marginBottom: "0",
+              }}
+            >
+              <h5> {shortenAddress(form.address)}</h5>
+            </Form.Item>
+            <Form.Item
+              style={{
+                display: "inline-block",
+                width: "calc(37% - 15px)",
+                marginRight: "10px",
+                marginBottom: "0",
+              }}
+            >
+              <Input
+                onChange={(v) => handleTeamForm("name", v.target.value)}
+                value={Team.name}
+                placeholder={"Name "}
+              />
+            </Form.Item>
+            <Form.Item
+              style={{
+                display: "inline-block",
+                width: "calc(37% - 15px)",
+                marginBottom: "0",
+              }}
+            >
+              <InputNumber
+                onChange={(v) => handleTeamForm("limit", v.target.value)}
+                value={Number(Team.limit)}
+                min={0}
+                placeholder={"Limit "}
+              />
+            </Form.Item>
+            <Form.Item>
+              <DeleteFilled
+                onClick={() => {}}
+                style={{
+                  marginRight: "3rem",
+                  marginTop: "1rem",
+                  marginBottom: "0",
+                  color: "red",
+                }}
+              />
+            </Form.Item>
+          </>
+        </div>
+      </Modal>
     </>
   );
 }

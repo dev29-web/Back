@@ -3,10 +3,10 @@ import _Image from "../_Image";
 
 import { useVent } from "../../Context";
 
-const Card = React.memo(({ id, handleSidebar, vent }) => {
-  const { logoName, coin, handleModal2 } = useVent();
+const Card = React.memo(({ id, vent }) => {
+  const { logoName, coin, handleModal2, handleSidebar } = useVent();
 
-  console.log("first", vent);
+  console.log("card", vent);
   return (
     <>
       <div key={id} className="card card--verified cur-p">
@@ -15,7 +15,7 @@ const Card = React.memo(({ id, handleSidebar, vent }) => {
         </div>
         <div
           className="card__body"
-          onClick={() => handleSidebar(true, id, vent?.owner)}
+          onClick={() => handleSidebar(true, id, vent?.owner, vent?.chainName)}
         >
           <p className="card__body--header">{vent?.chainName}</p>
           <h3 styleName="card__body--title">{vent?.name}</h3>

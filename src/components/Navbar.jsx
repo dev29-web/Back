@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { GoPersonFill, GoFileDirectoryFill, GoHomeFill } from "react-icons/go";
 
 import { Link, NavLink } from "react-router-dom";
@@ -13,13 +13,16 @@ export default function Navbar({}) {
     dashboard: false,
   });
 
-  const handleActiveBtn = (btn) => {
-    setActiveBtn({
-      home: btn === "home",
-      list: btn === "list",
-      dashboard: btn === "dashboard",
-    });
-  };
+  const handleActiveBtn = useCallback(
+    (btn) => {
+      setActiveBtn({
+        home: btn === "home",
+        list: btn === "list",
+        dashboard: btn === "dashboard",
+      });
+    },
+    [activeBtn]
+  );
 
   return (
     <nav className="navbar flex-column align-center">
