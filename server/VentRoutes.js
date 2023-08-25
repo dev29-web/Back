@@ -14,7 +14,10 @@ ventRouter.post(
     try {
       const { name } = req.body;
       const obj = await Vent.find({
-        name,
+        name: {
+          $regex: name,
+          $options: "i",
+        },
       });
       if (obj.length > 0) {
         res.status(200).json({
@@ -43,9 +46,9 @@ ventRouter.post(
       // create a new entry in transaction model
       const data = await Vent.create({
         uid,
-        name,
+        name: name.toLowerCase(),
         owner,
-        chainName,
+        chainName: chainName.toLowerCase(),
         token,
         balance: 0,
       });
@@ -82,19 +85,24 @@ ventRouter.get(
   })
 );
 
-//by name
+//by owner
 ventRouter.get(
-  "/:name",
+  "/owner/:owner",
   asyncHandler(async (req, res) => {
     try {
-      const { name } = req.params;
+      const { owner } = req.params;
       //find all entries by user id and type of income or expense
-      const obj = await Vent.findOne({ name }); //sort by date in descending order
+      const arr = await Vent.find({
+        owner: {
+          $regex: owner,
+          $options: "i",
+        },
+      }).sort({ createdAt: -1 }); //sort by date in descending order
 
       //send response
       res.status(200).json({
-        msg: "inserted Success",
-        vent: obj,
+        msg: "owner fetch Success",
+        vents: arr,
       });
     } catch (err) {
       res.status(404).json({ msg: err });
@@ -160,12 +168,18 @@ ventRouter.get(
 
 //Update entry's name, amount, date, category, type, description using id pass in params
 ventRouter.put(
-  "/name/:chainName/:id",
+  "/name/:chainName/:uid",
   asyncHandler(async (req, res) => {
     try {
       const { chainName, uid } = req.params;
 
-      const vent = await Vent.findOne({ chainName, uid });
+      const vent = await Vent.findOne({
+        chainName: {
+          $regex: chainName,
+          $options: "i",
+        },
+        uid,
+      });
       //Check if transaction exists to avoid error
       if (vent) {
         //update all entries with new data from req.body
@@ -197,7 +211,13 @@ ventRouter.put(
     try {
       const { chainName, uid } = req.params;
 
-      const vent = await Vent.findOne({ chainName, uid });
+      const vent = await Vent.findOne({
+        chainName: {
+          $regex: chainName,
+          $options: "i",
+        },
+        uid,
+      });
       //Check if transaction exists to avoid error
       if (vent) {
         //if data is not present then use old data
@@ -225,18 +245,21 @@ ventRouter.delete(
   "/:chainName/:uid",
   asyncHandler(async (req, res) => {
     const { chainName, uid } = req.params;
-    Transaction.deleteOne({ chainName, uid })
+
+    Vent.deleteOne({
+      chainName: {
+        $regex: chainName,
+        $options: "i",
+      },
+      uid,
+    })
       .then((obj) => {
         //Checks Deleted by Count
-        if (obj.deletedCount != 0) {
-          return res.status(200).json({
-            msg: "Deleted Success",
-            pages: totalPages,
-            total: totalTransactions,
-          }); //Deleted
-        } else {
-          res.status(401).json({ msg: "Sorry not deleted" }); //Not Deleted
-        }
+        return res.status(200).json({
+          msg: "Deleted Success",
+          pages: totalPages,
+          total: totalTransactions,
+        }); //Deleted
       })
       .catch((err) => {
         res.status(401).json({ msg: err }); //Not Found
