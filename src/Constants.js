@@ -1,39 +1,13 @@
 export const ventAddresses = {
   80001: {
-    address: "0xd6B85000322b918cd219b99a59c00D75BcD1976F",
+    address: "0x3426a3C33670fB83aa88DdFEB4cC287d863025fa",
   },
   43113: {
-    address: "0x92DECA5E935826886036F40d58a66a9aCc198488",
+    address: "0x067EE458E2A9041acE8Dbb0BB4dff3a11bF19FAb",
   },
 };
 
 export const ventAbi = [
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "gateway_",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "gasService_",
-        type: "address",
-      },
-      {
-        internalType: "string",
-        name: "chainName_",
-        type: "string",
-      },
-      {
-        internalType: "address",
-        name: "token_",
-        type: "address",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
   {
     inputs: [],
     name: "InvalidAddress",
@@ -61,9 +35,9 @@ export const ventAbi = [
       },
       {
         indexed: false,
-        internalType: "string",
-        name: "chainName",
-        type: "string",
+        internalType: "uint256",
+        name: "eventId",
+        type: "uint256",
       },
     ],
     name: "EventAdded",
@@ -102,6 +76,12 @@ export const ventAbi = [
         internalType: "uint256",
         name: "Event",
         type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "bool",
+        name: "isStaffsAdded",
+        type: "bool",
       },
     ],
     name: "EventEdited",
@@ -213,65 +193,6 @@ export const ventAbi = [
     ],
     name: "StaffEdited",
     type: "event",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    name: "Events",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "uid",
-        type: "uint256",
-      },
-      {
-        internalType: "string",
-        name: "name",
-        type: "string",
-      },
-      {
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-      {
-        internalType: "string",
-        name: "chainName",
-        type: "string",
-      },
-      {
-        internalType: "uint256",
-        name: "balance",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "expense",
-        type: "uint256",
-      },
-      {
-        internalType: "bool",
-        name: "token",
-        type: "bool",
-      },
-      {
-        internalType: "uint256",
-        name: "tokBalance",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "tokExpense",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
   },
   {
     inputs: [
@@ -409,59 +330,6 @@ export const ventAbi = [
         name: "eventId",
         type: "uint256",
       },
-      {
-        components: [
-          {
-            internalType: "string",
-            name: "name",
-            type: "string",
-          },
-          {
-            internalType: "address",
-            name: "staff",
-            type: "address",
-          },
-          {
-            internalType: "uint256",
-            name: "limit",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "expense",
-            type: "uint256",
-          },
-        ],
-        internalType: "struct VentSol.EventStaff[]",
-        name: "staffs_",
-        type: "tuple[]",
-      },
-    ],
-    name: "addStaff",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "chainName",
-    outputs: [
-      {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "eventId",
-        type: "uint256",
-      },
     ],
     name: "deleteEvent",
     outputs: [],
@@ -497,6 +365,33 @@ export const ventAbi = [
         internalType: "string",
         name: "updatedName",
         type: "string",
+      },
+      {
+        components: [
+          {
+            internalType: "string",
+            name: "name",
+            type: "string",
+          },
+          {
+            internalType: "address",
+            name: "staff",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "limit",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "expense",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct VentSol.EventStaff[]",
+        name: "staffs_",
+        type: "tuple[]",
       },
     ],
     name: "editEvent",
@@ -599,184 +494,6 @@ export const ventAbi = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "gateway",
-    outputs: [
-      {
-        internalType: "contract IAxelarGateway",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "eventId",
-        type: "uint256",
-      },
-    ],
-    name: "getEvent_balance",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "eventId",
-        type: "uint256",
-      },
-    ],
-    name: "getEvent_expenses",
-    outputs: [
-      {
-        components: [
-          {
-            internalType: "string",
-            name: "name",
-            type: "string",
-          },
-          {
-            internalType: "uint256",
-            name: "amount",
-            type: "uint256",
-          },
-          {
-            internalType: "address",
-            name: "to",
-            type: "address",
-          },
-          {
-            internalType: "address",
-            name: "from",
-            type: "address",
-          },
-          {
-            internalType: "bool",
-            name: "token",
-            type: "bool",
-          },
-        ],
-        internalType: "struct VentSol.StaffExpense[]",
-        name: "",
-        type: "tuple[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "eventId",
-        type: "uint256",
-      },
-    ],
-    name: "getSponsors",
-    outputs: [
-      {
-        components: [
-          {
-            internalType: "string",
-            name: "name",
-            type: "string",
-          },
-          {
-            internalType: "address",
-            name: "sponsor",
-            type: "address",
-          },
-          {
-            internalType: "uint256",
-            name: "amount",
-            type: "uint256",
-          },
-          {
-            internalType: "bool",
-            name: "token",
-            type: "bool",
-          },
-        ],
-        internalType: "struct VentSol.EventSponsor[]",
-        name: "",
-        type: "tuple[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "eventId",
-        type: "uint256",
-      },
-    ],
-    name: "getStaffs",
-    outputs: [
-      {
-        components: [
-          {
-            internalType: "string",
-            name: "name",
-            type: "string",
-          },
-          {
-            internalType: "address",
-            name: "staff",
-            type: "address",
-          },
-          {
-            internalType: "uint256",
-            name: "limit",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "expense",
-            type: "uint256",
-          },
-        ],
-        internalType: "struct VentSol.EventStaff[]",
-        name: "",
-        type: "tuple[]",
-      },
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "getTotalBalance",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "uint256",
@@ -845,5 +562,291 @@ export const ventAbi = [
   {
     stateMutability: "payable",
     type: "receive",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "gateway_",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "gasService_",
+        type: "address",
+      },
+      {
+        internalType: "string",
+        name: "chainName_",
+        type: "string",
+      },
+      {
+        internalType: "address",
+        name: "token_",
+        type: "address",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    inputs: [],
+    name: "chainName",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "Events",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "uid",
+        type: "uint256",
+      },
+      {
+        internalType: "string",
+        name: "name",
+        type: "string",
+      },
+      {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+      {
+        internalType: "string",
+        name: "chainName",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "balance",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "expense",
+        type: "uint256",
+      },
+      {
+        internalType: "bool",
+        name: "token",
+        type: "bool",
+      },
+      {
+        internalType: "uint256",
+        name: "tokBalance",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "tokExpense",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "gateway",
+    outputs: [
+      {
+        internalType: "contract IAxelarGateway",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "eventId",
+        type: "uint256",
+      },
+    ],
+    name: "getEvent_balance",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "eventId",
+        type: "uint256",
+      },
+    ],
+    name: "getEvent_expenses",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "string",
+            name: "name",
+            type: "string",
+          },
+          {
+            internalType: "uint256",
+            name: "amount",
+            type: "uint256",
+          },
+          {
+            internalType: "address",
+            name: "to",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "from",
+            type: "address",
+          },
+          {
+            internalType: "bool",
+            name: "token",
+            type: "bool",
+          },
+          {
+            internalType: "uint256",
+            name: "time",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct VentSol.StaffExpense[]",
+        name: "",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "eventId",
+        type: "uint256",
+      },
+    ],
+    name: "getSponsors",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "string",
+            name: "name",
+            type: "string",
+          },
+          {
+            internalType: "address",
+            name: "sponsor",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "amount",
+            type: "uint256",
+          },
+          {
+            internalType: "bool",
+            name: "token",
+            type: "bool",
+          },
+          {
+            internalType: "uint256",
+            name: "time",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct VentSol.EventSponsor[]",
+        name: "",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "eventId",
+        type: "uint256",
+      },
+    ],
+    name: "getStaffs",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "string",
+            name: "name",
+            type: "string",
+          },
+          {
+            internalType: "address",
+            name: "staff",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "limit",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "expense",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct VentSol.EventStaff[]",
+        name: "",
+        type: "tuple[]",
+      },
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getTotalBalance",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
   },
 ];

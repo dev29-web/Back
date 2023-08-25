@@ -4,7 +4,8 @@ import _Image from "../_Image";
 import { useVent } from "../../Context";
 
 const Card = React.memo(({ id, vent }) => {
-  const { logoName, coin, handleModal2, handleSidebar } = useVent();
+  const { logoName, coin, handleModal2, handleSidebar, currentAccount } =
+    useVent();
 
   console.log("card", vent);
   return (
@@ -35,7 +36,7 @@ const Card = React.memo(({ id, vent }) => {
           </h5>
           <a
             className="card__footer--btn"
-            onClick={() => handleModal2(true, "Pay", vent)}
+            onClick={() => currentAccount && handleModal2(true, "Pay", vent)}
           >
             Pay {">>"}
           </a>

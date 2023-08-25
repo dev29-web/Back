@@ -11,10 +11,10 @@ import VentDB from "../../api";
 import { ethers } from "ethers";
 const { formatEther, isAddress } = ethers.utils;
 
-import { DeleteFilled } from "@ant-design/icons";
+import { PlusOutlined, DeleteFilled } from "@ant-design/icons";
+import { Popconfirm } from "antd";
 import { GoPencil } from "react-icons/go";
 
-const change = true;
 async function _getVent(
   Contract,
   id,
@@ -28,6 +28,24 @@ async function _getVent(
       const vent = await Contract.Events(id);
 
       console.log("vent contract get success", vent);
+      if (
+        vent.name === "" &&
+        vent.owner === "0x0000000000000000000000000000000000000000"
+      ) {
+        setStatus({
+          loading: false,
+          error: true,
+          message: (
+            <>
+              <h6 style={{ fontWeight: 400, fontSize: "1.5rem" }}>
+                Sorry Contract
+                <br /> no longer exist
+              </h6>
+            </>
+          ),
+        });
+        return;
+      }
       //Set loading to false and set vent
       setStatus({ loading: false, error: false, message: "" });
       setVent(vent);
@@ -88,8 +106,14 @@ async function _getVent(
 // Sidebar UserDetail
 // -----Page
 export function SideBarForUser() {
-  const { sidebar, Contract, handleModal2, isSameAddress, currentAccount } =
-    useVent();
+  const {
+    sidebar,
+    Contract,
+    handleModal2,
+    isSameAddress,
+    currentAccount,
+    isSameChain,
+  } = useVent();
 
   const [vent, setVent] = useState(undefined);
   const [status, setStatus] = useState({
@@ -109,8 +133,7 @@ export function SideBarForUser() {
       sidebar.chainName,
       setVent,
       setStatus,
-      change
-      // isSameNetwork(sidebar?.chainName)
+      isSameChain(sidebar?.chainName)
     );
   }, [sidebar]);
 
@@ -237,8 +260,10 @@ const _Amount = React.memo(({ balance, expense }) => {
 // Sidebar Full EventDetail for Owner
 // -----Page
 export function SideBarForOwner() {
-  const { sidebar, Contract, handleModal2, coin } = useVent();
+  const { sidebar, Contract, handleModal2, coin, handleSidebar, isSameChain } =
+    useVent();
 
+  const [open, setOpen] = useState(false);
   const [vent, setVent] = useState(undefined);
   const [teams, setTeams] = useState([]);
   const [status, setStatus] = useState({
@@ -258,13 +283,13 @@ export function SideBarForOwner() {
       sidebar.chainName,
       setVent,
       setStatus,
-      change
+      isSameChain(sidebar?.chainName)
     );
 
     async function _getTeams(id) {
       try {
         if (!id) return;
-        const _teams = await Contract?.getStaffs(3);
+        const _teams = await Contract.getStaffs(id);
         console.log("getTeams success", _teams[0]);
         setTeams(_teams[0]);
       } catch (err) {
@@ -272,9 +297,25 @@ export function SideBarForOwner() {
       }
     }
     // Teams get
+    console.log("team", sidebar?.showId);
     _getTeams(sidebar?.showId);
   }, [sidebar]);
 
+  const handleDelete = async () => {
+    try {
+      Contract.on("EventDeleted", async (from, eventId) => {
+        console.log("eventDeleted", from, eventId);
+        eventId = ethers.BigNumber.from(eventId).toNumber();
+        await VentDB.delete(`/${sidebar?.chainName}/${eventId}`);
+        //Mongo delete event
+        message.success("Deleted");
+        handleSidebar(false);
+      });
+      await Contract.deleteEvent(sidebar?.showId);
+    } catch (err) {
+      console.log(err);
+    }
+  };
   return (
     <>
       {
@@ -287,6 +328,14 @@ export function SideBarForOwner() {
           vent &&
           Object.keys(vent).length > 0 && (
             <>
+              <EditNameModal
+                open={open}
+                setOpen={setOpen}
+                name={vent?.name}
+                eventId={sidebar?.showId}
+                chainName={sidebar?.chainName}
+                staffLength={teams?.length}
+              />
               <Card
                 id={sidebar?.showId}
                 handle_sideBar={() => {}}
@@ -318,18 +367,22 @@ export function SideBarForOwner() {
               <h4>
                 Team
                 <p>
-                  Coin: <span>{coin(vent?.chainName).coin}</span>
+                  Coin: <span>{coin(vent?.chainName)?.coin || ""}</span>
                 </p>
               </h4>
               <div className="teams">
                 {teams && teams.length > 0 ? (
-                  teams?.map((team) => {
+                  teams?.map((team, i) => {
+                    console.log("team", team);
                     return (
                       <Team
                         name={team?.name}
                         limit={team.limit}
                         expense={team?.expense}
                         address={team?.staff}
+                        staffId={i}
+                        eventId={sidebar?.showId}
+                        chainName={vent?.chainName}
                         // open={open}
                         // setOpen={setOpen}
                       />
@@ -342,11 +395,20 @@ export function SideBarForOwner() {
               <div className="flex-row justify-around">
                 <button
                   className="cur-p btn--edit"
-                  onClick={() => handleModal(true, "Edit", vent)}
+                  onClick={() => setOpen(true)}
                 >
                   Edit
                 </button>
-                <button className="cur-p btn--delete">Delete</button>
+                <Popconfirm
+                  title="Delete the vent"
+                  description="Are you sure to delete this vent?"
+                  onConfirm={handleDelete}
+                  onCancel={() => {}}
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <button className="cur-p btn--delete">Delete</button>
+                </Popconfirm>
               </div>
             </>
           )
@@ -361,8 +423,10 @@ export function SideBarForOwner() {
   );
 }
 //------Components
-function Team({ name, limit, expense, address }) {
+function Team({ name, limit, expense, address, staffId, eventId, chainName }) {
   const [open, setOpen] = useState(false);
+  const { shortenAddress } = useVent();
+
   return (
     name &&
     expense &&
@@ -375,14 +439,13 @@ function Team({ name, limit, expense, address }) {
           address={address}
           limit={limit}
           expense={expense}
+          staffId={staffId}
+          eventId={eventId}
+          chainName={chainName}
         />
         <div className="team">
           <h5 className="text-overflow">{name}</h5>
-          <p>
-            {address.toString().slice(0, 7)}
-            .....
-            {address.toString().slice(-5)}
-          </p>
+          <p>{shortenAddress(address, 11)}</p>
           <h6>{parseFloat(formatEther(limit)).toFixed(1)}</h6>
           <h6>{parseFloat(formatEther(expense)).toFixed(1)}</h6>
           <GoPencil className="cur-p" onClick={() => setOpen(true)} />
@@ -425,17 +488,25 @@ export function SideBarForSpend({ name }) {
   );
 }
 
-import { Modal, Form, Input, InputNumber, message } from "antd";
+import { Modal, Form, Input, InputNumber, message, Button, Space } from "antd";
 
-export function EditTeamModal({ open, setOpen, ...form }) {
+export function EditTeamModal({
+  //Parse
+  open,
+  setOpen,
+  ...form
+}) {
+  const { shortenAddress, parseEtherToWei, isSameAddress, Contract } =
+    useVent();
+
   const [Team, setTeam] = useState({
     staff: "",
     name: "",
     limit: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleTeamForm = (name, value) => {
-    console.log("team", name, value);
     setTeam({ ...Team, [name]: value });
   };
 
@@ -450,7 +521,8 @@ export function EditTeamModal({ open, setOpen, ...form }) {
     }
   }, [open]);
 
-  const handleOk = () => {
+  const handleOk = async () => {
+    setLoading(true);
     if (Team.limit < 0 || Team.limit < formatEther(form.expense))
       return message.warning("Limit should be greater than expense");
 
@@ -458,28 +530,52 @@ export function EditTeamModal({ open, setOpen, ...form }) {
     if (!Team.name || Team.name.length === 0)
       return message.warning("Need a name");
 
-    Contract.editStaff(
+    console.log(
+      "Okay",
       form.eventId,
       form.staffId,
       Team.name,
-      parseWeiToEther(Team.limit)
+      parseEtherToWei(Team.limit)
     );
-
-    VentDB.put(`/${form.chainName}/${form.id}`, {
-      ...form,
-      staff: Team.staff,
-      name: Team.name,
-      limit: parseWeiToEther(Team.limit),
-    })
-      .then((res) => {
-        console.log("edit team mongo success", res);
-        message.success("Team edited successfully");
+    Contract.once("StaffEdited", async (from, staffAddress) => {
+      //Mongodb add event
+      if (isSameAddress(staffAddress, form.address)) {
+        message.success("Updated");
+        setLoading(false);
         setOpen(false);
-      })
-      .catch((err) => {
-        console.log("edit team mongo error", err);
-        message.error("Team edit failed");
-      });
+      }
+    });
+    try {
+      await Contract.editStaff(
+        form.eventId,
+        form.staffId,
+        Team.name,
+        parseEtherToWei(Team.limit)
+      );
+    } catch (err) {
+      console.log(err);
+      message.error("Failed");
+      setLoading(false);
+      return;
+    }
+  };
+
+  const handleDelete = async () => {
+    setLoading(true);
+    console.log("Okay", form.eventId, form.staffId);
+    Contract.once("StaffDeleted", async (from, staffAddress) => {
+      message.success("Deleted");
+      setLoading(false);
+      setOpen(false);
+    });
+    try {
+      await Contract.deleteStaff(form.eventId, form.staffId);
+    } catch (err) {
+      console.log(err);
+      message.error("Failed");
+      setLoading(false);
+      return;
+    }
   };
   return (
     <>
@@ -488,6 +584,10 @@ export function EditTeamModal({ open, setOpen, ...form }) {
         open={open}
         // footer={}
         onOk={handleOk}
+        confirmLoading={true}
+        okButtonProps={{
+          loading: loading,
+        }}
         okText={"Edit"}
         onCancel={() => setOpen(false)}
         width={500}
@@ -505,7 +605,10 @@ export function EditTeamModal({ open, setOpen, ...form }) {
                 marginBottom: "0",
               }}
             >
-              <h5> {shortenAddress(form.address)}</h5>
+              <h5 style={{ fontSize: "1rem", fontWeight: 400 }}>
+                {" "}
+                {shortenAddress(form.address, 15)}
+              </h5>
             </Form.Item>
             <Form.Item
               style={{
@@ -529,7 +632,7 @@ export function EditTeamModal({ open, setOpen, ...form }) {
               }}
             >
               <InputNumber
-                onChange={(v) => handleTeamForm("limit", v.target.value)}
+                onChange={(v) => handleTeamForm("limit", v)}
                 value={Number(Team.limit)}
                 min={0}
                 placeholder={"Limit "}
@@ -537,7 +640,7 @@ export function EditTeamModal({ open, setOpen, ...form }) {
             </Form.Item>
             <Form.Item>
               <DeleteFilled
-                onClick={() => {}}
+                onClick={() => handleDelete()}
                 style={{
                   marginRight: "3rem",
                   marginTop: "1rem",
@@ -548,6 +651,260 @@ export function EditTeamModal({ open, setOpen, ...form }) {
             </Form.Item>
           </>
         </div>
+      </Modal>
+    </>
+  );
+}
+
+export function EditNameModal({
+  //Parse
+  open,
+  setOpen,
+  ...form
+}) {
+  const { isSameAddress, Contract, currentAccount } = useVent();
+
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    console.log("efffect", form);
+    if (open) {
+      setName(form.name);
+      setLimit(form.staffLength);
+    }
+  }, [open]);
+
+  const handleOk = async (value) => {
+    setLoading(true);
+
+    if (!name || name.length === 0) return message.warning("Need a name");
+
+    console.log("Okay", form.eventId, name);
+
+    let staffs = [];
+    const { teams } = value;
+    if (limit > form.staffLength && teams && teams.length > 0) {
+      console.log("staffs check", teams);
+      teams.forEach((team) => {
+        if (
+          !team.address ||
+          team.address.length === 0 ||
+          !ethers.utils.isAddress(team.address)
+        ) {
+          //Check address valid
+          message.warning("Enter valid team address");
+          return;
+        }
+        if (!team.name || team.name.length === 0) {
+          message.warning("Enter team name");
+          return;
+        }
+        if (team.limit === null || team.limit.length === "") {
+          message.warning("Enter team limit");
+          return;
+        }
+        staffs.push([
+          team.name,
+          team.address,
+          ethers.utils.parseUnits(team.limit.toString(), "ether"),
+          0,
+        ]); //0 is for intial balance
+      });
+    }
+
+    Contract.once("EventEdited", async (owner, eventId, isStaffAdded) => {
+      //Mongodb add event
+      if (isSameAddress(currentAccount, owner)) {
+        eventId = ethers.BigNumber.from(eventId).toNumber();
+        console.log(
+          "eventEdited",
+          eventId,
+          isStaffAdded,
+          form.chainName,
+          eventId
+        );
+        //updaate in mongo
+        await VentDB.put(`/name/${form.chainName}/${eventId}`, { name });
+
+        message.success("Updated");
+        setLoading(false);
+        setOpen(false);
+      }
+    });
+    try {
+      await Contract.editEvent(form.eventId, name, staffs);
+    } catch (err) {
+      console.log(err);
+      setLoading(false);
+      message.error("Failed");
+      return;
+    }
+  };
+
+  async function _addTeam(staffs) {
+    // Contract.once("StaffsAdded", async (from, eventId) => {
+    //   //Mongodb add event
+    //   if (isSameAddress(currentAccount, from)) {
+    //     //updaate in mongo
+    //     message.success("Updated");
+    //     setLoading(false);
+    //     setOpen(false);
+    //   }
+    // });
+
+    try {
+      await Contract.addStaff(form.eventId, staffs);
+      setLoading(false);
+      setOpen(false);
+    } catch (err) {
+      console.log(err);
+      setLoading(false);
+      message.error("Failed");
+      return;
+    }
+  }
+  const [limit, setLimit] = useState(0);
+  const [teamForm] = Form.useForm();
+  return (
+    <>
+      <Modal
+        title={<h4>Edit vent</h4>}
+        open={open}
+        // footer={}
+        footer={null}
+        onCancel={() => setOpen(false)}
+        width={500}
+      >
+        <Input
+          onChange={(v) => setName(v.target.value)}
+          value={name}
+          placeholder={"Name "}
+          style={{
+            marginBottom: "1rem",
+          }}
+        />
+        <Form
+          form={teamForm}
+          name="dynamic_form_complex"
+          onFinish={(value) => {
+            handleOk(value);
+          }}
+          style={{
+            maxWidth: 600,
+          }}
+          autoComplete="off"
+        >
+          <Form.List name="teams">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field) => (
+                  <Space key={field.key} align="baseline">
+                    <Form.Item
+                      style={{ marginBottom: "1rem" }}
+                      shouldUpdate={(prevValues, curValues) => {
+                        return true;
+                      }}
+                    >
+                      {() => (
+                        <>
+                          <Form.Item
+                            name={[field.name, "address"]}
+                            style={{
+                              display: "inline-block",
+                              width: "calc(35% - 15px)",
+                              marginRight: "10px",
+                              marginBottom: "0",
+                            }}
+                          >
+                            <Input
+                              placeholder={
+                                "Address " + (parseInt(field.key) + 1)
+                              }
+                            />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, "name"]}
+                            style={{
+                              display: "inline-block",
+                              width: "calc(35% - 15px)",
+                              marginRight: "10px",
+                              marginBottom: "0",
+                            }}
+                          >
+                            <Input
+                              placeholder={"Name " + (parseInt(field.key) + 1)}
+                            />
+                          </Form.Item>
+                          <Form.Item
+                            name={[field.name, "limit"]}
+                            style={{
+                              display: "inline-block",
+                              width: "calc(35% - 15px)",
+                              marginBottom: "0",
+                            }}
+                          >
+                            <InputNumber
+                              min={0}
+                              placeholder={"Limit " + (parseInt(field.key) + 1)}
+                            />
+                          </Form.Item>
+                        </>
+                      )}
+                    </Form.Item>
+
+                    <DeleteFilled
+                      onClick={() => {
+                        setLimit(limit - 1);
+                        remove(field.name);
+                      }}
+                      style={{
+                        marginRight: "3rem",
+                        marginTop: "1rem",
+                        marginBottom: "0",
+                        color: "red",
+                      }}
+                    />
+                  </Space>
+                ))}
+
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => {
+                      console.log("add", limit);
+
+                      if (limit > 3) {
+                        message.warning("Only 4 team staffs per vent");
+                        return;
+                      }
+                      setLimit(limit + 1);
+
+                      add();
+                    }}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    Add Team
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+          <Form.Item>
+            <Button
+              htmlType="submit"
+              className={"btn btn--primary"}
+              style={{
+                width: "100%",
+                height: "initial",
+              }}
+              loading={loading}
+            >
+              Update
+            </Button>
+          </Form.Item>
+        </Form>
       </Modal>
     </>
   );

@@ -51,28 +51,26 @@ const App = ({}) => {
     networks,
     coin,
     shortenAddress,
+    isSameChain,
     handleAddForm,
     handleModal,
     modal,
     loading_modal,
+    switchNetwork,
   } = useVent();
 
   useEffect(() => {
     setNetwork(currentNetwork);
-    const { vent } = modal;
-    console.log("form", vent);
-    if (!modal || !vent || Object.keys(vent).length <= 0) return;
-    console.log("form 2", vent);
+    // const { vent } = modal;
+    // console.log("form", vent);
+    // if (!modal || !vent || Object.keys(vent).length <= 0) return;
+    // console.log("form 2", vent);
 
-    const nativeCoin = coin(vent.chainName)?.coin;
+    // const nativeCoin = coin(vent.chainName)?.coin;
     form.setFieldsValue({
-      name: vent.name,
-      network: vent.chainName.toLowerCase(),
-      coin: [nativeCoin, vent.token && "aUSDC"],
-      //update
-      teams: [],
+      network: currentNetwork.toLowerCase(),
     });
-  }, [modal]);
+  }, [currentNetwork]);
 
   function handleClose() {
     setLimit(0);
@@ -155,7 +153,10 @@ const App = ({}) => {
               form={form}
               name="dynamic_form_complex"
               onFinish={(value) => {
-                handleAddForm(value, network, isPublic);
+                if (isSameChain(network)) {
+                  return handleAddForm(value, network, isPublic);
+                }
+                switchNetwork(network);
               }}
               style={{
                 maxWidth: 600,
@@ -193,9 +194,15 @@ const App = ({}) => {
                 >
                   <Select
                     disabled={modal?.title === "Edit"}
-                    value={currentNetwork.toLowerCase()}
-                    defaultValue={currentNetwork.toLowerCase()}
-                    onChange={(e) => setNetwork(e)}
+                    value={network}
+                    defaultValue={network.toLowerCase()}
+                    onChange={(e) => {
+                      setNetwork(e);
+                      //Update all its child to none
+                      form.setFieldsValue({
+                        coin: undefined,
+                      });
+                    }}
                     options={networks.map((e) =>
                       e.value !== currentNetwork
                         ? e

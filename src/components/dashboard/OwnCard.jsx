@@ -14,7 +14,7 @@ export default function OwnCard({ id, handleSidebar, handleSidebar2, vent }) {
         </div>
         <div
           className="card__body"
-          onClick={() => handleSidebar(true, id, vent?.owner)}
+          onClick={() => handleSidebar(true, id, vent?.owner, vent?.chainName)}
         >
           <p className="card__body--header">{vent?.chainName || null}</p>
           <h3 styleName="card__body--title">{vent?.name || null}</h3>

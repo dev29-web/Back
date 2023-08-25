@@ -1,20 +1,29 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import OwnCard from "../components/dashboard/OwnCard";
 import { GoPlus } from "react-icons/go";
 import Card from "./../components/home/Card";
 import { useVent } from "../Context";
+import NotConnected from "../components/NotConnected";
 
 export default function Dashboard({}) {
   const {
     handleSidebar,
     handleSidebar2,
-    SavedVents,
+    getOwnerVents,
     handleModal,
     currentAccount,
+    flag,
+    ownVents,
   } = useVent();
 
-  console.log("Dashboard", SavedVents);
+  useEffect(() => {
+    if (flag.dashboard || !currentAccount) return;
+
+    getOwnerVents(currentAccount);
+  }, [currentAccount]);
+
+  console.log("Dashboard", currentAccount, ownVents);
   return (
     <>
       {/* Filter section */}
@@ -39,18 +48,40 @@ export default function Dashboard({}) {
         </button>
       </div>
 
-      <div className="events events-box">
-        {SavedVents &&
-          SavedVents.map((vent) => (
-            <OwnCard
-              id={vent.uid}
-              handleSidebar={handleSidebar}
-              handleSidebar2={handleSidebar2}
-              vent={vent}
-            />
-          ))}
-      </div>
+      {!currentAccount && (
+        <>
+          <div
+            className="flex-column align-center justify-center"
+            style={{ height: "33%", fontSize: "1.3rem" }}
+          >
+            <NotConnected />
+          </div>
+        </>
+      )}
+      {currentAccount && (
+        <div className="events events-box">
+          {ownVents &&
+            ownVents.map((vent) => (
+              <OwnCard
+                id={vent.uid}
+                handleSidebar={handleSidebar}
+                handleSidebar2={handleSidebar2}
+                vent={vent}
+              />
+            ))}
+        </div>
+      )}
       <h2 onClick={() => handleSidebar2(true)}>Joined Vents</h2>
+      {!currentAccount && (
+        <>
+          <div
+            className="flex-column align-center justify-center"
+            style={{ height: "33%", fontSize: "1.3rem" }}
+          >
+            <NotConnected />
+          </div>
+        </>
+      )}
       <div className="events events-box">
         {/* <Card
           handleSidebar={handleSidebar}

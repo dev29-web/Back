@@ -3,12 +3,25 @@ import { GoSearch } from "react-icons/go";
 import { useVent } from "../Context";
 
 export default function Header() {
-  const { setConnectModal, currentAccount, shortenAddress } = useVent();
+  const {
+    setConnectModal,
+    currentAccount,
+    shortenAddress,
+    transactionStatus,
+    transaction,
+  } = useVent();
 
   return (
     <header>
       <div className="header--1">
-        <input type="text" placeholder="Search by vent name, address" />
+        <input
+          type="text"
+          placeholder="Search by vent name, address"
+          onClick={async () => {
+            await transactionStatus(transaction);
+            // console.log("Header")
+          }}
+        />
         <button>
           <GoSearch />
         </button>
@@ -28,7 +41,9 @@ export default function Header() {
               className="dot"
               style={{ backgroundColor: "aqua", marginRight: ".3rem" }}
             ></div>
-            <h3 style={{ fontWeight: "400" }}>{shortenAddress(currentAccount, 17)}</h3>
+            <h3 style={{ fontWeight: "400" }}>
+              {shortenAddress(currentAccount, 17)}
+            </h3>
           </div>
         ) : (
           <button

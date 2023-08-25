@@ -93,6 +93,14 @@ const PayForm = React.memo(({}) => {
     setButtonTitle("Spend");
   }, [modal]);
 
+  useEffect(() => {
+    setSelectedNetwork(currentNetwork);
+    form.setFieldsValue({
+      network: currentNetwork.toLowerCase(),
+    });
+  }, [currentNetwork]);
+
+  const [loading, setLoading] = useState(false);
   const [buttonTitle, setButtonTitle] = useState("Send");
   const changePayButton = (coin) => {
     const _toCoin = form.getFieldValue("toCoin");
@@ -125,9 +133,9 @@ const PayForm = React.memo(({}) => {
       toNetwork: "",
     });
 
+    setLoading(false);
     setSelectedNetwork(currentNetwork);
     setSelectedCoin("");
-    console.log("first");
     setAmount(0);
 
     handleModal2(false);
@@ -199,7 +207,10 @@ const PayForm = React.memo(({}) => {
         <Form
           form={form}
           name="dynamic_form_complex"
-          onFinish={(value) => handlePayForm(value, amount)}
+          onFinish={(value) => {
+            setLoading(true);
+            handlePayForm(value, amount, network, setLoading);
+          }}
           style={{
             maxWidth: 600,
           }}
@@ -218,7 +229,7 @@ const PayForm = React.memo(({}) => {
                 {
                   required:
                     network.toLowerCase() === currentNetwork.toLowerCase(),
-                  message: "Select one network to deploy",
+                  message: "Select one network to send from",
                 },
               ]}
             >
@@ -313,18 +324,11 @@ const PayForm = React.memo(({}) => {
                 marginRight: "8px",
                 marginBottom: ".6rem",
               }}
-              rules={[
-                {
-                  required:
-                    network.toLowerCase() === currentNetwork.toLowerCase(),
-                  message: "Select one network to send from",
-                },
-              ]}
             >
               <Select
                 disabled={modal?.title2 === "Spend"}
-                value={currentNetwork.toLowerCase()}
-                defaultValue={currentNetwork.toLowerCase()}
+                value={network}
+                defaultValue={network}
                 onChange={(e) => {
                   setSelectedNetwork(e);
 
@@ -436,6 +440,7 @@ const PayForm = React.memo(({}) => {
             <Button
               htmlType="submit"
               className="btn btn--highlight"
+              loading={loading}
               style={{
                 width: "100%",
                 height: "initial",

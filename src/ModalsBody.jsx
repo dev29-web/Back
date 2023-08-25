@@ -20,7 +20,7 @@ export default function ModalsBody() {
     sidebar,
     handleSidebar,
     handleSidebar2,
-    isSameNetwork,
+    isSameChain,
     isSameAddress,
     currentAccount,
   } = useVent();
@@ -38,7 +38,7 @@ export default function ModalsBody() {
         sidebar={sidebar}
         children={
           !isSameAddress(sidebar?.cardOwner, currentAccount) ||
-          !isSameNetwork(sidebar?.chainName) ? (
+          !isSameChain(sidebar?.chainName) ? (
             <SideBarForUser />
           ) : (
             <SideBarForOwner />

@@ -6,8 +6,12 @@ export default function NotConnected() {
 
   return (
     <>
-      <h4>Contract not found</h4>
-      <h6 style={{ fontWeight: "300", marginBottom: "0px" }}>
+      <h4 style={{ fontWeight: "300", fontSize: "1.1rem" }}>
+        Contract Connection not found
+      </h4>
+      <h6
+        style={{ fontWeight: "500", marginBottom: "5px", fontSize: "inherit" }}
+      >
         Connect to Metamask Wallet
       </h6>
       <button

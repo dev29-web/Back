@@ -10,12 +10,24 @@ import React, {
 } from "react";
 import { message } from "antd";
 
-import VentDB from "./api";
-
-import { ventAddresses, ventAbi } from "./Constants";
 import { ethers } from "ethers";
 const { Contract } = ethers;
 const { ethereum } = window;
+
+import VentDB from "./api";
+
+import { ventAddresses, ventAbi } from "./Constants";
+import Swap from "./Swap";
+import IERC20 from "@axelar-network/axelar-gmp-sdk-solidity/interfaces/IERC20.sol/IERC20.json";
+import {
+  AxelarGMPRecoveryAPI,
+  AxelarQueryAPI,
+  Environment,
+} from "@axelar-network/axelarjs-sdk";
+const SDK = new AxelarGMPRecoveryAPI({
+  environment: Environment.TESTNET,
+});
+const API = new AxelarQueryAPI({ environment: Environment.TESTNET });
 
 const VentContext = createContext();
 
@@ -25,6 +37,56 @@ export function useVent() {
 
 //Dummy
 import { vents } from "./dummy";
+
+const CHAINS = {
+  5: {
+    name: "Ethereum",
+    chainName: "Ethereum Goerli",
+    chainId: 5,
+    native: "ETH",
+    rpc: "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+    gateway: "0xe432150cce91c13a887f7D836923d5597adD8E31",
+    usdc: "0x254d06f33bDc5b8ee05b2ea472107E300226659A",
+  },
+  4002: {
+    name: "Fantom",
+    chainName: "Fantom Testnet",
+    chainId: 4002,
+    native: "FTM",
+    rpc: "https://rpc.testnet.fantom.network/",
+    gateway: "0x97837985Ec0494E7b9C71f5D3f9250188477ae14",
+    usdc: "0x75Cc4fDf1ee3E781C1A3Ee9151D5c6Ce34Cf5C61",
+  },
+  1287: {
+    name: "Moonbeam",
+    chainName: "Moonbase Alpha",
+    chainId: 1287,
+    native: "DEV",
+    rpc: "https://rpc.api.moonbase.moonbeam.network/",
+    gateway: "0x5769D84DD62a6fD969856c75c7D321b84d455929",
+    usdc: "0xD1633F7Fb3d716643125d6415d4177bC36b7186b",
+  },
+  80001: {
+    name: "Polygon",
+    chainName: "Polygon Mumbai",
+    chainId: 80001,
+    native: "MATIC",
+    rpc: "https://matic-mumbai.chainstacklabs.com",
+    gateway: "0xBF62ef1486468a6bd26Dd669C06db43dEd5B849B",
+    usdc: "0x2c852e740B62308c46DD29B982FBb650D063Bd07",
+    address: "0x3426a3C33670fB83aa88DdFEB4cC287d863025fa",
+  },
+  43113: {
+    name: "Avalanche",
+    chainName: "Avalanche Fuji",
+    chainId: 43113,
+    native: "AVAX",
+    rpc: "https://api.avax-test.network/ext/bc/C/rpc",
+    gateway: "0xC249632c2D40b9001FE907806902f63038B737Ab",
+    usdc: "0x57F1c63497AEe0bE305B8852b354CEc793da43bB",
+    address: "0x067EE458E2A9041acE8Dbb0BB4dff3a11bF19FAb",
+  },
+};
 
 export function VentProvider({ children }) {
   //Utils/Pure functions
@@ -61,22 +123,30 @@ export function VentProvider({ children }) {
     }
     return ethers.utils.formatEther(wei);
   }
-  function isSameAddress(owner, currentAddress) {
-    const { isAddress } = ethers.utils;
-    console.log(
-      "isSameAddress",
-      owner,
-      currentAccount,
-      isAddress(owner) === isAddress(currentAddress)
-    );
-    return owner && isAddress(owner) === isAddress(currentAddress);
+  function parseEtherToWei(eth, eth2) {
+    eth = eth.toString();
+    if (eth2) {
+      eth2 = eth2.toString();
+      const s = (parseFloat(eth) + parseFloat(eth2)).toString();
+      eth = ethers.utils.parseUnits(s, "ether");
+    }
+    return ethers.utils.parseUnits(eth, "ether");
   }
-  function isSameNetwork(network) {
+  function isSameAddress(owner, currentAddress) {
+    const { getAddress } = ethers.utils;
+    console.log("isSameAddress", owner, currentAccount);
+    return (
+      owner &&
+      currentAddress &&
+      getAddress(owner) === getAddress(currentAddress)
+    );
+  }
+  function isSameChain(chain) {
     console.log(
       "isSameNetwork",
-      network.toLowerCase() === currentNetwork.toLowerCase()
+      chain.toLowerCase() === currentNetwork.toLowerCase()
     );
-    return network && network.toLowerCase() === currentNetwork.toLowerCase();
+    return chain && chain.toLowerCase() === currentNetwork.toLowerCase();
   }
   function checkName(name) {
     return VentDB.post("/checkName", {
@@ -105,23 +175,7 @@ export function VentProvider({ children }) {
 
   const amount = "10";
   const color = "red";
-  const chains = {
-    5: {
-      name: "Goreila",
-    },
-    4002: {
-      name: "Fantom",
-    },
-    1287: {
-      name: "Moonbeam",
-    },
-    80001: {
-      name: "Polygon",
-    },
-    43113: {
-      name: "Avalanche",
-    },
-  };
+
   const networks = [
     {
       value: "ethereum",
@@ -144,27 +198,36 @@ export function VentProvider({ children }) {
     ethereum: {
       coin: "ETH",
       emoji: "🔷",
+      chainId: 5,
     },
     avalanche: {
       coin: "AVAX",
       emoji: "🔴",
+      chainId: 43113,
     },
     polygon: {
       coin: "MATIC",
       emoji: "🟣",
+      chainId: 80001,
     },
     fantom: {
       coin: "FTM",
       emoji: "🔵",
+      chainId: 4002,
     },
     moonbeam: {
       coin: "DEV",
       emoji: "🌑",
+      chainId: 1287,
     },
   };
 
   //Variables
   //---Gloabal
+  const [flag, setFlag] = useState({
+    dashboard: false,
+    lists: false,
+  });
   const [Vents, setVents] = useState([]);
   const [SavedVents, setSavedVents] = useState([]);
   //---Modals
@@ -265,24 +328,22 @@ export function VentProvider({ children }) {
       if (staffs.length === teams.length) {
         createVent(name, token, network, staffs, isPublic);
       }
-
-      //Loading btn
-      setLoading_modal(false);
       return;
     }
     // message.success("Vent created");
     // handleModal(false);
     createVent(name, token, network, staffs, isPublic);
   };
-  const handlePayForm = (values, amount) => {
-    console.log("values", values);
-    const { fromNetwork, fromCoin, toNetwork, toCoin, receiver, name } = values;
+  const [swapForm, setSwapForm] = useState({
+    fromCoin: "",
+    fromNetwork: "",
+    amount: "",
+    source: "",
+    destination: "",
+  });
+  const handlePayForm = async (values, amount, fromNetwork, setLoading) => {
+    const { fromCoin, toNetwork, toCoin, receiver, name } = values;
 
-    //Check coin has seleced or not
-    // if (fromNetwork.toLowerCase() !== currentNetwork.toLowerCase()) {
-    //   message.warning("Switching network");
-    //   return;
-    // }
     if (receiver.length === 0) {
       //Check address valid
       message.warning("Select coin");
@@ -301,7 +362,86 @@ export function VentProvider({ children }) {
       return;
     }
     //Check amount < balance
+    const amount_wei = parseEtherToWei(amount);
+    console.log("amount_wei", amount_wei);
 
+    //Format values
+    // amount: undefined;
+    // fromCoin: "MATIC";
+    // fromNetwork: undefined;
+    // name: "loki";
+    // receiver: "0xF747F92b123Aca5Af635d1073796129318E4791C";
+    // toCoin: Array[("MATIC", false)];
+    // toNetwork: "polygon";
+    contract.on("SponsorAdded", (name, from, amount, spondorId) => {
+      console.log("SponsorAdded", name, from, amount, spondorId);
+      setLoading(false);
+      setModal({ ...modal, open2: false });
+      if (isSameAddress(from, currentAccount)) {
+        // mongo update
+      }
+    });
+    console.log("value", values);
+    const { vent2 } = modal;
+    if (isSameChain(fromNetwork) && vent2 && Object.keys(vent2).length > 0) {
+      //Check balance
+      //Checkers
+      if (toCoin.includes(fromCoin)) {
+        //======Cross Send======
+        if (
+          fromCoin.toLowerCase() === "aUSDC".toLowerCase() &&
+          fromNetwork.toLowerCase() !== toNetwork.toLowerCase()
+        ) {
+          const amount_wei = parseFloat(amount) * 10 ** 6;
+
+          const source = CHAINS[coin(fromNetwork.toLowerCase()).chainId];
+          const destination = CHAINS[coin(toNetwork.toLowerCase()).chainId];
+          calculate_gasFee(source, destination)
+            .then(async (gasFee) => {
+              addSponsor_GmpToken(
+                vent2.uid,
+                name,
+                amount_wei,
+                toNetwork,
+                gasFee,
+                source,
+                destination,
+                setLoading
+              );
+            })
+            .catch((err) => {
+              setLoading(false);
+              message.error("Internal error");
+              console.error(err);
+            });
+          return;
+        }
+
+        //======SEND======
+        addSponsor_Pay(vent2.uid, name, amount_wei)
+          .then((tx) => {
+            console.log("SEND", tx);
+          })
+          .catch((err) => {
+            setLoading(false);
+            message.error("Internal error");
+            console.error(err);
+          });
+        return;
+      }
+      //======SWAP & SEND======
+      setSwapForm({
+        fromCoin,
+        fromNetwork,
+        amount: amount.toString(),
+        source: CHAINS[coin(fromNetwork.toLowerCase()).chainId],
+        destination: CHAINS[coin(toNetwork.toLowerCase()).chainId],
+      });
+      setDoswap(true);
+      // setButtonTitle("Swap & Send");
+    } else {
+      switchNetwork(fromNetwork);
+    }
     message.success("All good");
   };
 
@@ -353,11 +493,9 @@ export function VentProvider({ children }) {
 
   const handleModal = useCallback(
     (open, title, vent) => {
-      console.log("first", currentAccount);
-      // console.log("modal", open, title, vent);
-      // setModal({ ...modal, open, title, vent });
-      // //Loading btn
-      // setLoading_modal(false);
+      setModal({ ...modal, open, title, vent });
+      //Loading btn
+      setLoading_modal(false);
     },
     [modal]
   );
@@ -373,6 +511,20 @@ export function VentProvider({ children }) {
   //
   //=====BlockChain
   //
+  const transactionStatus = async (txHash) => {
+    const res = await SDK.queryTransactionStatus(txHash);
+    console.log("status", res);
+    return res;
+  };
+  const calculate_gasFee = async (source, dest) => {
+    console.log(`Gas Caluculator called`);
+
+    return await API.estimateGasFee(
+      source.name.toUpperCase(),
+      dest.name.toUpperCase(),
+      source.symbol
+    );
+  };
   function _checkEthereum() {
     if (!ethereum) return message.error("Can't find Metamask");
     return;
@@ -395,12 +547,12 @@ export function VentProvider({ children }) {
     }
 
     const _chainId = ethereum.networkVersion;
-    if (!Object.keys(chains).includes(_chainId)) {
+    if (!Object.keys(CHAINS).includes(_chainId)) {
       message.warning(
         `This network ${_chainId} doesn't support, Please change!`
       );
     } else {
-      setCurrentNetwork(chains[_chainId].name);
+      setCurrentNetwork(CHAINS[_chainId].name);
 
       console.log("_contract", ventAddresses[_chainId].address);
       const _contract = new Contract(
@@ -415,28 +567,68 @@ export function VentProvider({ children }) {
     message.success("Metamask connected!");
   }, [currentAccount, currentNetwork]);
 
-  const createVent = async (name_, token_, network_, staffs_, isOpen) => {
-    //Listening for EventAdded event
-    contract.once("EventAdded", async (name, from, id) => {
-      //Mongodb add event
-      if (isOpen) {
-        let args = {
-          uid: 123,
-          name,
-          chainName: network_,
-          owner: from,
-          token: token_,
-        };
+  async function switchNetwork(switch_network) {
+    _checkEthereum();
 
-        await VentDB.post("/", args);
-        setVents([args, ...Vents]);
-
-        console.log("EventAdded", args);
-      }
-    });
-    setLoading_modal(true);
-
+    const chainId = _coin[currentNetwork.toLowerCase()].chainId;
+    const switch_chainId = _coin[switch_network.toLowerCase()].chainId;
+    console.log(
+      "swicth",
+      currentNetwork,
+      switch_network,
+      chainId,
+      switch_chainId
+    );
     try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: ethers.utils.hexValue(switch_chainId) }],
+      });
+    } catch (err) {
+      // This error code indicates that the chain has not been added to MetaMask
+      if (err.code === 4902) {
+        const { native, rpc, chainName } = CHAINS[switch_chainId];
+        await window.ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainName: chainName,
+              chainId: ethers.utils.hexValue(switch_chainId),
+              nativeCurrency: { name: native, decimals: 18, symbol: native },
+              rpcUrls: [rpc],
+            },
+          ],
+        });
+      }
+    }
+  }
+
+  const createVent = async (name_, token_, network_, staffs_, isOpen) => {
+    try {
+      //Listening for EventAdded event
+      contract.once("EventAdded", async (name, owner, eventId) => {
+        //Mongodb add event
+        console.log("EventAdded", name, owner, eventId);
+        if (isOpen) {
+          let args = {
+            uid: ethers.BigNumber.from(eventId).toNumber(),
+            name,
+            owner,
+            chainName: network_,
+            token: token_,
+          };
+          console.log("EventAdded 1", args);
+
+          await VentDB.post("/", args);
+          setVents([args, ...Vents]);
+          setOwnVents([args, ...ownVents]);
+        }
+        setLoading_modal(false);
+        message.success("Vent created");
+        handleModal(false);
+      });
+      setLoading_modal(true);
+
       //Contract add event
       message.info("Creating vent...");
       const tx = await (
@@ -444,8 +636,6 @@ export function VentProvider({ children }) {
       ).wait(1);
 
       console.log("tx", tx);
-      message.success("Vent created");
-      handleModal(false);
       // contract.off("EventAdded");
     } catch (err) {
       //Loading btn
@@ -454,6 +644,74 @@ export function VentProvider({ children }) {
     }
   };
 
+  //--Sponsor Payments...
+  async function addSponsor_Pay(id, name, amount_wei) {
+    try {
+      const tx = await (
+        await contract.addSponsor_Pay(id, name, {
+          value: amount_wei,
+        })
+      ).wait();
+      return tx;
+    } catch (err) {
+      console.error(err);
+      return;
+    }
+  }
+  const [transaction, setTransaction] = useState("");
+  async function addSponsor_GmpToken(
+    id,
+    name,
+    amount_wei,
+    toNetwork,
+    gasFee,
+    source,
+    destination,
+    setLoading
+  ) {
+    try {
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const usdc = new Contract(source.usdc, IERC20.abi, provider.getSigner());
+
+      message.warning("Approve usdc to continue");
+      await (await usdc.approve(source.address, amount_wei)).wait();
+      message.info("Approved... sending payment");
+
+      const tx = await (
+        await contract.addSponsor_GmpToken(
+          id,
+          name,
+          amount_wei,
+          destination.address,
+          toNetwork,
+          {
+            value: gasFee,
+          }
+        )
+      ).wait();
+      const { transactionHash } = tx;
+
+      setTransaction(transactionHash);
+      setLoading(false);
+
+      console.log(
+        tx,
+        "Axelar api",
+        "https://testnet.axelarscan.io/gmp/" + transactionHash
+      );
+      transactionStatus(transactionHash).then((res) => {
+        console.log("status on payform", res);
+      });
+      return tx;
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+      return;
+    }
+  }
+  const [doswap, setDoswap] = useState(false);
+  async function swap() {}
+  //----DB
   const getJoinedVents = useCallback(async () => {
     _checkEthereum();
 
@@ -473,6 +731,30 @@ export function VentProvider({ children }) {
       return [];
     }
   };
+
+  const [ownVents, setOwnVents] = useState([]);
+  const getOwnerVents = useCallback(
+    async (currentAddress) => {
+      try {
+        // Mongodb get all event
+        // await delay(000);
+        const { data } = await VentDB.get(`/owner/${currentAddress}`);
+
+        if (data && data.vents && data.vents.length > 0) {
+          setOwnVents(data.vents);
+          setFlag({ ...flag, dashboard: true });
+        }
+        return data.vents;
+      } catch (err) {
+        console.error(err);
+        return [];
+      }
+
+      // Mongodb get all event
+    },
+    [currentAccount]
+  );
+
   useEffect(() => {
     // delay(3000).then(() => {
     //   console.log("second");
@@ -487,27 +769,11 @@ export function VentProvider({ children }) {
       console.log(vents);
       // setVents(vents);
       // setSavedVents(vents.slice(0, 3));
-      setVents([
-        {
-          uid: "0",
-          name: "Birthday_Party ",
-          owner: "0x2Ef7736AFeb464E68ecbB1258E2668e276CBBEc8",
-          chainName: "Polygon",
-          balance: "0",
-          token: true,
-        },
-        ...vents,
-      ]);
+      setVents([...vents]);
     });
     // console.log("context useEffect");
     // setVents(vents);
     setSavedVents(vents.slice(0, 3));
-  }, []);
-
-  useEffect(() => {
-    // This effect will run after each render
-    // The currentAccount state should be updated at this point
-    console.log("currentAccount in useEffect:", currentAccount);
   }, []);
 
   return (
@@ -523,10 +789,13 @@ export function VentProvider({ children }) {
         logoName,
         shortenAddress,
         parseWeiToEther,
-        isSameNetwork,
+        parseEtherToWei,
+        isSameChain,
         isSameAddress,
         //state
+        flag,
         Vents,
+        ownVents,
         SavedVents,
         sidebar,
         modal,
@@ -545,11 +814,18 @@ export function VentProvider({ children }) {
         handlePayForm,
         setConnectModal,
         //functions
+        switchNetwork,
         getVent,
         getAllVents,
+        getOwnerVents,
         connectMetamask,
+        transactionStatus,
+        transaction,
+        swapForm,
+        setTransaction,
       }}
     >
+      <Swap doswap={doswap} />
       {children}
     </VentContext.Provider>
   );
