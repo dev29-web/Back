@@ -44,14 +44,16 @@ const PayForm = React.memo(({}) => {
   const [amount, setAmount] = useState(0);
 
   const {
+    constants,
     currentNetwork,
-    networks,
+    currentAccount,
     coin,
-    address_shorten,
+    shortenAddress,
     handlePayForm,
     handleModal2,
     modal,
   } = useVent();
+  const { networks } = constants;
 
   ///////// Form Structure
   // amount: 13;
@@ -181,7 +183,7 @@ const PayForm = React.memo(({}) => {
           >
             {modal?.title2 || "Pay"} Vent
             <p className="form--subtitle">
-              connected: <p>{address_shorten}</p>
+              connected: <p>{shortenAddress(currentAccount, 14)}</p>
               <span style={{ textTransform: "capitalize" }}>
                 {currentNetwork}
               </span>
@@ -208,8 +210,7 @@ const PayForm = React.memo(({}) => {
           form={form}
           name="dynamic_form_complex"
           onFinish={(value) => {
-            setLoading(true);
-            handlePayForm(value, amount, network, setLoading);
+            handlePayForm(value, amount, network, setLoading, handleCancle);
           }}
           style={{
             maxWidth: 600,

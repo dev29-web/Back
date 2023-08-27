@@ -4,7 +4,6 @@ import { GoX } from "react-icons/go";
 // import { SideBarForUser } from "./home/_SideBar";
 
 export default function Sidebar({ handleSidebar, sidebar, children }) {
-  console.log("sidebar");
   return (
     <>
       <div

@@ -12,6 +12,8 @@ import {
   Form,
   Input,
   InputNumber,
+  Checkbox,
+  Alert,
 } from "antd";
 
 import { useVent } from "../Context.jsx";
@@ -43,12 +45,14 @@ const App = ({}) => {
 
   const [network, setNetwork] = useState("ethereum");
   const [isPublic, setPublic] = useState(true);
+  const [verify, setVerify] = useState(false);
+  const [credential, setCredential] = useState("");
 
   //State from context
   const {
     currentNetwork,
     currentAccount,
-    networks,
+    constants,
     coin,
     shortenAddress,
     isSameChain,
@@ -57,7 +61,10 @@ const App = ({}) => {
     modal,
     loading_modal,
     switchNetwork,
+    ssx,
+    apply,
   } = useVent();
+  const { networks } = constants;
 
   useEffect(() => {
     setNetwork(currentNetwork);
@@ -154,7 +161,11 @@ const App = ({}) => {
               name="dynamic_form_complex"
               onFinish={(value) => {
                 if (isSameChain(network)) {
-                  return handleAddForm(value, network, isPublic);
+                  if (verify) {
+                    console.log("verifying");
+                    return;
+                  }
+                  return handleAddForm(value, network, isPublic, credential);
                 }
                 switchNetwork(network);
               }}
@@ -284,7 +295,7 @@ const App = ({}) => {
                     {fields.map((field) => (
                       <Space key={field.key} align="baseline">
                         <Form.Item
-                          style={{ marginBottom: "1rem" }}
+                          style={{ marginBottom: ".3rem" }}
                           shouldUpdate={(prevValues, curValues) => {
                             return true;
                           }}
@@ -378,11 +389,54 @@ const App = ({}) => {
                   </>
                 )}
               </Form.List>
+              <Alert
+              style={{padding: ".2rem", textAlign: "center", marginBottom: "1rem"}}
+                description={"Only 4 members are allowed"}
+                type="warning"
+                closable
+              />
+              <Form.Item
+                style={{
+                  marginBottom: "1rem",
+                }}
+              >
+                {isPublic && (
+                  <label className="container">
+                    <input
+                      type="checkbox"
+                      checked={credential || verify}
+                      onChange={() => {
+                        console.log(verify, credential);
+                        if (!ssx || ssx === "" || ssx === undefined) {
+                          return message.warning(
+                            "Please connect your profile using SIWE"
+                          );
+                        }
+                        if (apply) {
+                          return message.info(
+                            "Need to fill Application Form on header"
+                          );
+                        }
+                        if (credential === "" || credential === undefined) {
+                          return setVerify(!verify);
+                        }
+                      }}
+                    />
+                    <span style={{ fontWeight: "600", fontSize: "1rem" }}>
+                      Agree to verification
+                    </span>{" "}
+                    by sharing your Profile/Credentials for a verified vent
+                    <span className="checkmark"></span>
+                  </label>
+                )}
+              </Form.Item>
               <Form.Item>
                 <Button
                   htmlType="submit"
                   className={
-                    isPublic ? "btn btn--highlight" : "btn btn--primary"
+                    isPublic && (verify || credential !== "")
+                      ? "btn btn--highlight"
+                      : "btn btn--primary"
                   }
                   style={{
                     width: "100%",
@@ -404,6 +458,11 @@ const App = ({}) => {
                 </Button>
               </Form.Item>
             </Form>
+            <VerificationModal
+              open={verify}
+              setOpen={setVerify}
+              setCredential={setCredential}
+            />
           </>
         )}
       </Modal>
@@ -411,3 +470,102 @@ const App = ({}) => {
   );
 };
 export default App;
+
+import SyncLoader from "react-spinners/SyncLoader";
+import { toCredentialEntry } from "../utils/rebase.ts";
+
+function VerificationModal({ open, setOpen, setCredential }) {
+  const { credentialList, getCredentialList, ssx } = useVent();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function _getCredential() {
+      const data = await getCredentialList();
+      console.log(data);
+    }
+    if (open) {
+      if (!credentialList || credentialList.length <= 0) {
+        _getCredential();
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [open]);
+
+  const handleGetContent = async (content) => {
+    setLoading(true);
+    try {
+      const contentName = content.replace("vent/", "");
+      const { data } = await ssx.storage.get(contentName).catch((e) => {
+        setCredential("");
+        setOpen(false);
+      });
+
+      const _credential = JSON.stringify(toCredentialEntry(data), null, 2);
+      // console.log(_credential);
+
+      if (_credential) {
+        setCredential(_credential);
+        setOpen(false);
+      } else {
+        setOpen(false);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
+
+  function load() {
+    return <SyncLoader color="#e065e1" size={20} />;
+  }
+  return (
+    <Modal
+      centered
+      title={
+        <h3>
+          {credentialList && credentialList.length > 0
+            ? "Select one credential"
+            : "Verification process"}
+        </h3>
+      }
+      open={open}
+      // onOk={handleOk}
+      footer={null}
+      onCancel={() => setOpen(false)}
+      width={300}
+      style={{
+        width: "300px",
+        height: "fit-content",
+      }}
+    >
+      <div
+        className="flex-column align-center justify-center"
+        style={{
+          minHeight: "150px",
+          maxHeight: "400px",
+          overflowY: "scroll",
+          gap: "1rem",
+        }}
+      >
+        {loading
+          ? load()
+          : credentialList && credentialList.length > 0
+          ? credentialList.map((content, i) => (
+              <>
+                <div style={{ display: "flex" }}>
+                  <h4>{content}</h4>
+                  <button
+                    className="btn btn--secondary"
+                    onClick={() => handleGetContent(content)}
+                  >
+                    GET
+                  </button>
+                </div>
+              </>
+            ))
+          : load()}
+      </div>
+    </Modal>
+  );
+}

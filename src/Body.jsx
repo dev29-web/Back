@@ -9,7 +9,8 @@ import NoPage from "./pages/NoPage";
 import { useVent } from "./Context";
 
 export default function Body() {
-  const { sidebar } = useVent();
+  const { SidebarCtx } = useVent();
+  const { sidebar } = SidebarCtx;
 
   return (
     <>

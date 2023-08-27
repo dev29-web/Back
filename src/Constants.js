@@ -1,9 +1,9 @@
 export const ventAddresses = {
   80001: {
-    address: "0x3426a3C33670fB83aa88DdFEB4cC287d863025fa",
+    address: "0x2dd4350c0e41543bE302F471C3568485465B0cd1",
   },
   43113: {
-    address: "0x067EE458E2A9041acE8Dbb0BB4dff3a11bF19FAb",
+    address: "0x1A260eBD5006B53132eCAe60973c79c0Ddca8e3D",
   },
 };
 
@@ -737,6 +737,168 @@ export const ventAbi = [
           },
         ],
         internalType: "struct VentSol.StaffExpense[]",
+        name: "",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "staff",
+        type: "address",
+      },
+    ],
+    name: "getEventsOfStaff",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "uid",
+            type: "uint256",
+          },
+          {
+            internalType: "string",
+            name: "name",
+            type: "string",
+          },
+          {
+            internalType: "address",
+            name: "owner",
+            type: "address",
+          },
+          {
+            internalType: "string",
+            name: "chainName",
+            type: "string",
+          },
+          {
+            internalType: "uint256",
+            name: "balance",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "expense",
+            type: "uint256",
+          },
+          {
+            internalType: "bool",
+            name: "token",
+            type: "bool",
+          },
+          {
+            internalType: "uint256",
+            name: "tokBalance",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "tokExpense",
+            type: "uint256",
+          },
+          {
+            components: [
+              {
+                internalType: "string",
+                name: "name",
+                type: "string",
+              },
+              {
+                internalType: "address",
+                name: "staff",
+                type: "address",
+              },
+              {
+                internalType: "uint256",
+                name: "limit",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "expense",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct VentSol.EventStaff[]",
+            name: "staffs",
+            type: "tuple[]",
+          },
+          {
+            components: [
+              {
+                internalType: "string",
+                name: "name",
+                type: "string",
+              },
+              {
+                internalType: "address",
+                name: "sponsor",
+                type: "address",
+              },
+              {
+                internalType: "uint256",
+                name: "amount",
+                type: "uint256",
+              },
+              {
+                internalType: "bool",
+                name: "token",
+                type: "bool",
+              },
+              {
+                internalType: "uint256",
+                name: "time",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct VentSol.EventSponsor[]",
+            name: "sponsors",
+            type: "tuple[]",
+          },
+          {
+            components: [
+              {
+                internalType: "string",
+                name: "name",
+                type: "string",
+              },
+              {
+                internalType: "uint256",
+                name: "amount",
+                type: "uint256",
+              },
+              {
+                internalType: "address",
+                name: "to",
+                type: "address",
+              },
+              {
+                internalType: "address",
+                name: "from",
+                type: "address",
+              },
+              {
+                internalType: "bool",
+                name: "token",
+                type: "bool",
+              },
+              {
+                internalType: "uint256",
+                name: "time",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct VentSol.StaffExpense[]",
+            name: "expenses",
+            type: "tuple[]",
+          },
+        ],
+        internalType: "struct VentSol.Event[]",
         name: "",
         type: "tuple[]",
       },

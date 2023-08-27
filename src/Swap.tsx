@@ -9,42 +9,35 @@ const squid = new Squid({
   baseUrl: "https://testnet.api.squidrouter.com",
 });
 
-declare global {
-  interface Window {
-    ethereum: any;
-  }
-}
-
-export default function Swap({ doswap }) {
-  const { swapForm, setTransaction } = useVent();
+export default function Swap({}) {
+  const { setSwapFunction } = useVent();
   interface chainOptions {
     name: string;
     native: string;
     chainId: Number;
+    address: string;
   }
+
   useEffect(() => {
-    console.log("swap start", doswap);
-    if (!doswap) return;
-    console.log("swap started", doswap);
+    console.log("swap start");
+    if (!setSwapFunction) return;
+    console.log("swap started");
 
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-
-    console.log("swap signer", signer, swapForm);
-    if (signer && swapForm) {
-      swap(
-        swapForm.fromCoin,
-        swapForm.fromNetwork,
-        swapForm.amount,
-        signer,
-        swapForm.source,
-        swapForm.destination
-      ).then((res) => {
-        console.log("swap res", res);
-        setTransaction(res.transactionHash);
-      });
-    }
-  }, [doswap]);
+    setSwapFunction(() => swap);
+    // if (signer && swapForm) {
+    //   swap(
+    //     swapForm.fromCoin,
+    //     swapForm.fromNetwork,
+    //     swapForm.amount,
+    //     signer,
+    //     swapForm.source,
+    //     swapForm.destination
+    //   ).then((res) => {
+    //     console.log("swap res", res);
+    //     setTransaction(res.transactionHash);
+    //   });
+    // }
+  }, [setSwapFunction]);
 
   function capitalize(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
@@ -54,9 +47,9 @@ export default function Swap({ doswap }) {
     fromCoin: string,
     fromNetwork: string,
     amount: string,
-    signer: ethers.Signer,
     source: chainOptions,
-    destination: chainOptions
+    destination: chainOptions,
+    signer: any
   ) {
     await squid.init();
     const fromToken = squid.tokens.find(
@@ -76,12 +69,12 @@ export default function Swap({ doswap }) {
             ?.chainId
     );
 
-    const myAddress = await signer.getAddress();
+    const myAddress = await signer?.getAddress();
     console.log("swap Add", myAddress);
     const amount_wei = ethers.utils.parseEther(amount);
     try {
       const { route } = await squid.getRoute({
-        toAddress: myAddress,
+        toAddress: destination?.address,
         fromChain: fromToken?.chainId as string,
         fromToken: fromToken?.address as string,
         fromAmount: amount_wei.toString(),

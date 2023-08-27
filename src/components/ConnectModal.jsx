@@ -4,7 +4,12 @@ import { Modal } from "antd";
 import { useVent } from "../Context";
 
 const ConnectModal = React.memo(() => {
-  const { connectModal, setConnectModal, connectMetamask } = useVent();
+  const {
+    connectModal,
+    setConnectModal,
+    connectMetamask,
+    connectSignInWithEthereum,
+  } = useVent();
 
   return (
     <>
@@ -33,18 +38,19 @@ const ConnectModal = React.memo(() => {
               src="metamask.svg"
             />
           </button>
-          {/* <button
-            className="btn btn--highlight flex-row justify-center align-center"
+          <button
+            className="btn btn--siwe flex-row justify-center align-center"
             style={{ fontSize: "1.7rem", width: "100%" }}
+            onClick={connectSignInWithEthereum}
           >
-            connect
+            Sign in with Ethereum
             <img
-              width={"30px"}
-              style={{ marginLeft: "1rem" }}
+              width={"40px"}
+              style={{ marginLeft: "1rem", height: "40px" }}
               className="btn--connect-icon"
-              src="metamask.svg"
+              src="siwe.png"
             />
-          </button> */}
+          </button>
         </div>
       </Modal>
     </>

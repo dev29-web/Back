@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 
 import OwnCard from "../components/dashboard/OwnCard";
 import { GoPlus } from "react-icons/go";
-import Card from "./../components/home/Card";
 import { useVent } from "../Context";
 import NotConnected from "../components/NotConnected";
+
+import { Empty } from "antd";
 
 export default function Dashboard({}) {
   const {
@@ -47,8 +48,7 @@ export default function Dashboard({}) {
           Create new vent <GoPlus />
         </button>
       </div>
-
-      {!currentAccount && (
+      {!currentAccount ? (
         <>
           <div
             className="flex-column align-center justify-center"
@@ -57,43 +57,25 @@ export default function Dashboard({}) {
             <NotConnected />
           </div>
         </>
-      )}
-      {currentAccount && (
+      ) : ownVents && ownVents.length > 0 ? (
         <div className="events events-box">
-          {ownVents &&
-            ownVents.map((vent) => (
-              <OwnCard
-                id={vent.uid}
-                handleSidebar={handleSidebar}
-                handleSidebar2={handleSidebar2}
-                vent={vent}
-              />
-            ))}
+          {ownVents.map((vent) => (
+            <OwnCard
+              id={vent.uid}
+              handleSidebar={handleSidebar}
+              handleSidebar2={handleSidebar2}
+              vent={vent}
+            />
+          ))}
         </div>
-      )}
-      <h2 onClick={() => handleSidebar2(true)}>Joined Vents</h2>
-      {!currentAccount && (
-        <>
-          <div
-            className="flex-column align-center justify-center"
-            style={{ height: "33%", fontSize: "1.3rem" }}
-          >
-            <NotConnected />
-          </div>
-        </>
-      )}
-      <div className="events events-box">
-        {/* <Card
-          handleSidebar={handleSidebar}
-          handleSidebar2={handleSidebar2}
-          logoName={logoName}
+      ) : (
+        <Empty
+          className="flex-column justify-center align-center"
+          style={{ height: "40%", marginTop: "2rem" }}
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={`Sorry, no vents created yet!`}
         />
-        <Card
-          handleSidebar={handleSidebar}
-          handleSidebar2={handleSidebar2}
-          logoName={logoName}
-        /> */}
-      </div>
+      )}
     </>
   );
 }

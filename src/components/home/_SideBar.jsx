@@ -12,7 +12,7 @@ import { ethers } from "ethers";
 const { formatEther, isAddress } = ethers.utils;
 
 import { PlusOutlined, DeleteFilled } from "@ant-design/icons";
-import { Popconfirm } from "antd";
+import { Popconfirm, Tooltip, Alert, Empty } from "antd";
 import { GoPencil } from "react-icons/go";
 
 async function _getVent(
@@ -107,13 +107,14 @@ async function _getVent(
 // -----Page
 export function SideBarForUser() {
   const {
-    sidebar,
+    SidebarCtx,
     Contract,
     handleModal2,
     isSameAddress,
     currentAccount,
     isSameChain,
   } = useVent();
+  const { sidebar } = SidebarCtx;
 
   const [vent, setVent] = useState(undefined);
   const [status, setStatus] = useState({
@@ -155,11 +156,19 @@ export function SideBarForUser() {
           !status.error &&
           Object.keys(vent).length > 0 && (
             <>
-              <Card id={1} handle_sideBar={() => {}} vent={vent} />
+              <Card
+                id={1}
+                isSidebar={true}
+                vent={{ ...vent, verified: sidebar?.verified }}
+              />
               {/* Verified check */}
-              <h2>
-                Verified <img src="verify.png" alt="Verified" />
-              </h2>
+              {vent?.verified && (
+                <Tooltip title="Verified" color={"#4352d7"}>
+                  <h2>
+                    Verified <img src="verify.png" alt="Verified" />
+                  </h2>
+                </Tooltip>
+              )}
 
               {/* Amount */}
               <_Amount balance={vent?.balance} expense={vent?.expense || "0"} />
@@ -170,6 +179,17 @@ export function SideBarForUser() {
                 token={vent?.token}
                 owner={vent?.owner}
               />
+
+              {!isSameChain(vent?.chainName) && (
+                <>
+                  <Alert
+                    // style={{ padding: ".8rem", gap: ".2rem" }}
+                    description="If you wanted accurate details, switch to the same network as the vent."
+                    type="warning"
+                    closable
+                  />
+                </>
+              )}
 
               {/* Pay Btn */}
               <button
@@ -260,8 +280,15 @@ const _Amount = React.memo(({ balance, expense }) => {
 // Sidebar Full EventDetail for Owner
 // -----Page
 export function SideBarForOwner() {
-  const { sidebar, Contract, handleModal2, coin, handleSidebar, isSameChain } =
-    useVent();
+  const {
+    SidebarCtx,
+    Contract,
+    handleModal2,
+    coin,
+    handleSidebar,
+    isSameChain,
+  } = useVent();
+  const { sidebar } = SidebarCtx;
 
   const [open, setOpen] = useState(false);
   const [vent, setVent] = useState(undefined);
@@ -339,12 +366,14 @@ export function SideBarForOwner() {
               <Card
                 id={sidebar?.showId}
                 handle_sideBar={() => {}}
-                vent={vent}
+                vent={{ ...vent, verified: sidebar?.verified }}
               />
               {/* Verified check */}
-              <h2>
-                Verified <img src="verify.png" alt="Verified" />
-              </h2>
+              {sidebar?.verified && (
+                <h2>
+                  Verified <img src="verify.png" alt="Verified" />
+                </h2>
+              )}
 
               {/* Amount */}
               <_Amount balance={vent?.balance} expense={vent?.expense || 0} />
@@ -392,7 +421,10 @@ export function SideBarForOwner() {
                   <p className="center">No members yet</p>
                 )}
               </div>
-              <div className="flex-row justify-around">
+              <div
+                className="flex-row justify-around"
+                style={{ marginTop: "1.2rem" }}
+              >
                 <button
                   className="cur-p btn--edit"
                   onClick={() => setOpen(true)}
@@ -457,36 +489,39 @@ function Team({ name, limit, expense, address, staffId, eventId, chainName }) {
 
 //Sidebar Spend Detail
 //-----Page
-export function SideBarForSpend({ name }) {
+export const SideBarForSpend = React.memo(({ name, spends }) => {
+  const { coin, currentNetwork } = useVent();
+
   return (
     <>
       <h1>{name}</h1>
       <section className="spends">
-        <SpendCard
-          name={"Cakesaga"}
-          address={"0x2Ef7736AFeb464E68ecbB1258E2668e276CBBEc8"}
-          amount={"10"}
-          time={"1692418451"}
-          type={"aUSDC"}
-        />
-        <SpendCard
-          name={"Cake"}
-          address={"0x2Ef7736AFeb464E68ecbB1258E2668e276CBBEc8"}
-          amount={"10"}
-          time={"1692418451"}
-          type={"avax"}
-        />
-        <SpendCard
-          name={"Cake"}
-          address={"0x2Ef7736AFeb464E68ecbB1258E2668e276CBBEc8"}
-          amount={"10"}
-          time={"1692418451"}
-          type={"avax"}
-        />
+        {spends && spends.length > 0 ? (
+          spends.map((spend) => {
+            return (
+              <SpendCard
+                name={spend?.name}
+                address={spend?.sponsor || spend?.from}
+                amount={spend?.amount}
+                time={spend?.time}
+                type={spend?.token ? "aUSDC" : coin(currentNetwork)?.coin}
+              />
+            );
+          })
+        ) : (
+          <>
+            <div className="center" style={{ height: "50vh" }}>
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={`Sorry, no ${name?.toLowerCase()} yet!`}
+              />{" "}
+            </div>
+          </>
+        )}
       </section>
     </>
   );
-}
+});
 
 import { Modal, Form, Input, InputNumber, message, Button, Space } from "antd";
 
@@ -535,8 +570,10 @@ export function EditTeamModal({
       form.eventId,
       form.staffId,
       Team.name,
-      parseEtherToWei(Team.limit)
+      Team.limit,
+      parseEtherToWei("1.1")
     );
+    // parseEtherToWei(Team.limit)
     Contract.once("StaffEdited", async (from, staffAddress) => {
       //Mongodb add event
       if (isSameAddress(staffAddress, form.address)) {
@@ -589,7 +626,10 @@ export function EditTeamModal({
           loading: loading,
         }}
         okText={"Edit"}
-        onCancel={() => setOpen(false)}
+        onCancel={() => {
+          setLoading(false);
+          setOpen(false);
+        }}
         width={500}
       >
         <div
@@ -662,7 +702,7 @@ export function EditNameModal({
   setOpen,
   ...form
 }) {
-  const { isSameAddress, Contract, currentAccount } = useVent();
+  const { isSameAddress, Contract, currentAccount, updateVentName } = useVent();
 
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -726,7 +766,7 @@ export function EditNameModal({
         );
         //updaate in mongo
         await VentDB.put(`/name/${form.chainName}/${eventId}`, { name });
-
+        updateVentName(form.name, name);
         message.success("Updated");
         setLoading(false);
         setOpen(false);

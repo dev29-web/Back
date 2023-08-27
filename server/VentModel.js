@@ -7,6 +7,10 @@ const Schema = mongoose.Schema(
       type: String,
       required: true,
     },
+    public: {
+      type: Boolean,
+      default: false,
+    },
     name: {
       type: String,
       required: true,
@@ -31,18 +35,11 @@ const Schema = mongoose.Schema(
     verified: {
       type: Boolean,
     },
+    credential: {
+      type: String,
+    },
     //create saved thats has user address as key and whether or not its saved as value
-    saved: [
-      {
-        address: {
-          type: String,
-        },
-        isPrimary: {
-          type: Boolean,
-          default: false,
-        },
-      },
-    ],
+    saved: [],
   },
   {
     timestamps: true,

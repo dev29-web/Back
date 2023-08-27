@@ -13,6 +13,9 @@
     "@0xsquid/sdk": "^1.8.0",
     "@axelar-network/axelar-local-dev": "^2.0.3",
     "@axelar-network/axelarjs-sdk": "^0.13.5",
+    "@spruceid/rebase-client": "^0.16.2",
+    "@spruceid/ssx": "^2.1.0",
+    "@spruceid/ssx-react": "^2.0.2",
     "axios": "^1.4.0",
     "dayjs": "^1.11.9",
     "ethers": "^5.7.2",
@@ -33,6 +36,7 @@
     "react-router-dom": "^6.15.0",
     "react-spinners": "^0.13.8",
     "sass": "^1.65.1",
-    "vite": "^4.4.5"
+    "vite": "^4.4.5",
+    "vite-plugin-wasm": "^3.2.2"
   }
 }

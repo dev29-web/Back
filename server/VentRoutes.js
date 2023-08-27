@@ -42,7 +42,16 @@ ventRouter.post(
   asyncHandler(async (req, res) => {
     try {
       // get all data of name, amount, date, category, type, description from req.body
-      const { uid, name, owner, chainName, token } = req.body;
+      const {
+        uid,
+        name,
+        owner,
+        chainName,
+        token,
+        public,
+        verified,
+        credential,
+      } = req.body;
       // create a new entry in transaction model
       const data = await Vent.create({
         uid,
@@ -51,6 +60,9 @@ ventRouter.post(
         chainName: chainName.toLowerCase(),
         token,
         balance: 0,
+        verified,
+        public: public,
+        credential: credential.toString() || "",
       });
 
       //send response
@@ -64,20 +76,47 @@ ventRouter.post(
   })
 );
 
-//Send all entries from transaction model by user id and type of income or expense
-//and add pagination with limit of 10 entries per page
+//GET ALL VENTS PUBLIC
 ventRouter.get(
   "/",
   asyncHandler(async (req, res) => {
     try {
       //find all entries by user id and type of income or expense
-      const obj = await Vent.find({}) //sort by date in descending order
+      const obj = await Vent.find({ public: true })
+        .select("-credential") //sort by date in descending order
         .sort({ createdAt: -1 });
 
       //send response
       res.status(200).json({
         msg: "inserted Success",
         vents: obj,
+      });
+    } catch (err) {
+      res.status(404).json({ msg: err });
+    }
+  })
+);
+
+//by owner GET SAVED Vents
+ventRouter.get(
+  "/saved/:owner",
+  asyncHandler(async (req, res) => {
+    try {
+      let { owner } = req.params;
+      //find all entries by user id and type of income or expense
+      console.log("saved", owner);
+      owner = owner.toLowerCase();
+      const objs = await Vent.find({
+        saved: {
+          $in: [owner],
+        },
+      }).sort({ createdAt: -1 }); //sort by date in descending order
+
+      console.log(objs, owner);
+      //send response
+      res.status(200).json({
+        msg: "inserted Success",
+        vent: objs,
       });
     } catch (err) {
       res.status(404).json({ msg: err });
@@ -110,7 +149,7 @@ ventRouter.get(
   })
 );
 
-//by chainname, id
+//by chainname, id GET VENT
 ventRouter.get(
   "/:chainName/:id",
   asyncHandler(async (req, res) => {
@@ -125,7 +164,7 @@ ventRouter.get(
         uid: id,
       }); //sort by date in descending order
 
-      console.log(obj);
+      console.log("ch/id");
       //send response
       res.status(200).json({
         msg: "inserted Success",
@@ -137,10 +176,41 @@ ventRouter.get(
   })
 );
 
+//by chainname, id GET VERIFY
+ventRouter.get(
+  "/verify/:chainName/:id",
+  asyncHandler(async (req, res) => {
+    try {
+      const { chainName, id } = req.params;
+      //find all entries by user id and type of income or expense
+      const obj = await Vent.findOne({
+        chainName: {
+          $regex: chainName,
+          $options: "i",
+        },
+        uid: id,
+      }); //sort by date in descending order
+
+      console.log("verifu");
+      //send response
+      res.status(200).json({
+        msg: "inserted Success",
+        vent: {
+          verified: obj.verified,
+          credential: obj.credential,
+          public: obj.public,
+        },
+      });
+    } catch (err) {
+      res.status(404).json({ msg: err });
+    }
+  })
+);
+
 // //Send all entries from transaction model by user id and type of income or expense
 // //same pagination as above
 // //get query of sortBy and sortOrder to sort entries by name, amount, date, category
-//sort
+//SORTED
 ventRouter.get(
   "/sorted?",
   asyncHandler(async (req, res) => {
@@ -167,6 +237,8 @@ ventRouter.get(
 );
 
 //Update entry's name, amount, date, category, type, description using id pass in params
+
+//Name
 ventRouter.put(
   "/name/:chainName/:uid",
   asyncHandler(async (req, res) => {
@@ -205,6 +277,7 @@ ventRouter.put(
   })
 );
 
+//Balance
 ventRouter.put(
   "/balance/:chainName/:uid",
   asyncHandler(async (req, res) => {
@@ -218,13 +291,60 @@ ventRouter.put(
         },
         uid,
       });
+      console.log("balance", uid, chainName);
       //Check if transaction exists to avoid error
       if (vent) {
         //if data is not present then use old data
-        vent.name = req.body.balance || vent.balance;
+        vent.balance = req.body.balance || vent.balance;
         // console.log(req.body);
+        console.log(req.body.balance);
         await vent.save(); //Save
 
+        res.json({
+          message: "success",
+        });
+      } else {
+        res.status(404);
+        throw new Error("Transaction not found");
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(404);
+      throw new Error("Transaction not found");
+    }
+  })
+);
+
+//Save
+ventRouter.put(
+  "/save/:chainName/:uid",
+  asyncHandler(async (req, res) => {
+    try {
+      const { chainName, uid } = req.params;
+
+      console.log("save");
+      const vent = await Vent.findOne({
+        chainName: {
+          $regex: chainName,
+          $options: "i",
+        },
+        uid,
+      });
+      //Check if transaction exists to avoid error
+      if (vent) {
+        //if data is not present then use old data
+        let { save, address } = req.body;
+        address = address.toLowerCase();
+
+        if (save) {
+          if (!vent.saved.includes(address)) {
+            vent.saved.push(address);
+          }
+        } else {
+          vent.saved = vent.saved.filter((item) => item !== address);
+        }
+
+        await vent.save(); //Save
         res.json({
           message: "success",
         });
